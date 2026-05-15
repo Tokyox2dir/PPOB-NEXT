@@ -139,8 +139,8 @@ select.filter-input { cursor: pointer; }
 .stat-card.success::before { background: var(--success); }
 .stat-card.pending::before { background: var(--pending); }
 .stat-card.reversed::before { background: var(--rev); }
-.stat-card.failed::before { background: var(--danger); }
-.stat-card.processing::before { background: var(--text3); }
+.stat-card.revenue::before { background: var(--accent2); }
+.stat-card.margin::before { background: var(--success); }
 .stat-card.pending.is-live-pending {
   display: block;
   visibility: visible;
@@ -162,7 +162,8 @@ select.filter-input { cursor: pointer; }
   text-shadow: 0 0 10px rgba(251,191,36,0.95), 0 0 22px rgba(245,158,11,0.75);
 }
 .stat-value.reversed { color: var(--rev); }
-.stat-value.failed { color: var(--danger); }
+.stat-value.revenue { color: var(--accent2); }
+.stat-value.margin { color: var(--success); }
 .stat-pct { font-size: 11px; color: var(--text3); }
 
 /* Main grid */
@@ -327,6 +328,7 @@ tbody tr:hover td { background: var(--bg3); }
 .status-pill.pending { background: var(--pending-bg); color: var(--pending); }
 .status-pill.reversed { background: var(--rev-bg); color: var(--rev); }
 .status-pill.failed { background: var(--danger-bg); color: var(--danger); }
+.status-pill.processing { background: var(--bg3); color: var(--text2); }
 .trx-row-pending td {
   background: rgba(245,158,11,0.08);
   animation: pendingRowBlink 1.05s ease-in-out infinite;

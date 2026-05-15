@@ -170,9 +170,19 @@ const ALERT_DEMO_INTERVAL_MS = 10 * 1000;
 const ALERT_DEMO_VISIBLE_MS = 5 * 1000;
 const INCIDENT_DEMO_MAX_ROWS = 30;
 const LOSS_TRX_DEMO_MAX_ROWS = 30;
+const STATUS_INCIDENT_THRESHOLD = 5;
+const STATUS_INCIDENT_HOLD_MS = 5 * 60 * 1000;
 const DEMO_PENDING_INTERVAL_MS = 5000;
 const DEMO_PENDING_RESOLVE_MS = 2000;
 const LIVE_PENDING = new Map();
+const STATUS_INCIDENT_STATE = {
+  Failed: { since: null, alerted: false },
+  Processing: { since: null, alerted: false },
+};
+const REVENUE_STEP = 1000000;
+const MARGIN_STEP = 50000;
+let cumulativeRevenue = 0;
+let cumulativeMargin = 0;
 
 // Alert: client stop
 const ALERTS_STOP = [
@@ -422,10 +432,11 @@ function updateSummaryStats() {
   const total = TRAFFIC.reduce((sum, t) => sum + t.today, 0);
   const reversed = Math.max(0, Math.round(total * 0.112 + Math.random() * 8));
   const pending = LIVE_PENDING.size;
-  const failed = Math.random() > 0.85 ? 1 : 0;
-  const processing = Math.random() > 0.75 ? Math.floor(Math.random() * 4) + 1 : 0;
+  const failed = countRowsByStatus("Failed");
+  const processing = countRowsByStatus("Processing");
   const success = Math.max(0, total - reversed - pending - failed - processing);
   const successPct = total ? ((success / total) * 100).toFixed(1) : "0.0";
+  const marginPct = cumulativeRevenue ? ((cumulativeMargin / cumulativeRevenue) * 100).toFixed(2) : "0.00";
   latestSuccessRate = `${successPct}%`;
 
   document.getElementById("s-total").textContent = total.toLocaleString("id");
@@ -433,9 +444,13 @@ function updateSummaryStats() {
   document.getElementById("s-success-pct").textContent = latestSuccessRate;
   document.getElementById("s-pending").textContent = pending.toLocaleString("id");
   document.getElementById("s-rev").textContent = reversed.toLocaleString("id");
-  document.getElementById("s-failed").textContent = failed.toLocaleString("id");
-  document.getElementById("s-proc").textContent = processing.toLocaleString("id");
+  document.getElementById("s-revenue").textContent = formatMoney(cumulativeRevenue);
+  document.getElementById("s-margin").textContent = formatMoney(cumulativeMargin);
+  document.getElementById("s-revenue-pct").textContent = "Today";
+  document.getElementById("s-margin-pct").textContent = `${marginPct}% revenue`;
   updatePendingVisualState(pending);
+  evaluateStatusIncident("Failed", failed);
+  evaluateStatusIncident("Processing", processing);
 
   if (chartDonut) {
     chartDonut.data.datasets[0].data = [success, reversed, pending, failed];
@@ -448,6 +463,75 @@ function updatePendingVisualState(pendingCount = LIVE_PENDING.size) {
   if (!pendingCard) return;
 
   pendingCard.classList.toggle("is-live-pending", pendingCount > 0);
+}
+
+function countRowsByStatus(status) {
+  return RAW.filter((row) => row.status === status).length;
+}
+
+function calculateRevenue() {
+  return RAW.reduce((sum, row) => {
+    if (row.status !== "Success") return sum;
+    return sum + parseMoney(row.price);
+  }, 0);
+}
+
+function calculateMargin() {
+  return RAW.reduce((sum, row) => {
+    if (row.status !== "Success") return sum;
+    const margin = parseSignedMoney(row.margin);
+    return margin > 0 ? sum + margin : sum;
+  }, 0);
+}
+
+function seedCumulativeFinance() {
+  const successCount = RAW.filter((row) => row.status === "Success").length;
+  cumulativeRevenue = Math.max(calculateRevenue(), successCount * REVENUE_STEP);
+  cumulativeMargin = Math.max(calculateMargin(), successCount * MARGIN_STEP);
+}
+
+function addTransactionToFinance(trx) {
+  if (!trx || trx.status !== "Success" || trx.financeBooked) return;
+  cumulativeRevenue += REVENUE_STEP;
+  cumulativeMargin += MARGIN_STEP;
+  trx.financeBooked = true;
+}
+
+function evaluateStatusIncident(status, count) {
+  const state = STATUS_INCIDENT_STATE[status];
+  if (!state) return;
+
+  if (count < STATUS_INCIDENT_THRESHOLD) {
+    state.since = null;
+    state.alerted = false;
+    removeStatusIncident(status);
+    return;
+  }
+
+  if (!state.since) state.since = Date.now();
+  const hasHeldLongEnough = Date.now() - state.since >= STATUS_INCIDENT_HOLD_MS;
+
+  if (hasHeldLongEnough && !state.alerted) {
+    upsertStatusIncident(status, count);
+    state.alerted = true;
+  }
+}
+
+function upsertStatusIncident(status, count) {
+  const product = `Transaction ${status} / Dashboard`;
+  upsertProductAlert({
+    level: "critical",
+    product,
+    desc: `${count} transactions ${status.toLowerCase()} for 5 minutes`,
+    time: shortTime(),
+    systemKey: `status-${status.toLowerCase()}`,
+  });
+}
+
+function removeStatusIncident(status) {
+  const key = `status-${status.toLowerCase()}`;
+  const index = ALERTS_PRODUCT.findIndex((alert) => alert.systemKey === key);
+  if (index >= 0) ALERTS_PRODUCT.splice(index, 1);
 }
 
 // Render alert: client stop
@@ -592,8 +676,8 @@ function updateTabBadge(badge, count) {
 }
 
 function upsertProductAlert(alert) {
-  const sameKey = `${alert.product}|${alert.level}`;
-  const exists = ALERTS_PRODUCT.findIndex((a) => `${a.product}|${a.level}` === sameKey);
+  const sameKey = alert.systemKey || `${alert.product}|${alert.level}`;
+  const exists = ALERTS_PRODUCT.findIndex((a) => (a.systemKey || `${a.product}|${a.level}`) === sameKey);
   if (exists >= 0) ALERTS_PRODUCT.splice(exists, 1);
   ALERTS_PRODUCT.unshift(alert);
   limitAlertRows(ALERTS_PRODUCT);
@@ -699,6 +783,7 @@ function buildDemoIncidentBatch() {
 
   return shuffled.slice(0, count).map((row, index) => ({
     ...row,
+    demo: true,
     time: shortTime(new Date(Date.now() - (index * 3 + Math.floor(Math.random() * 8)) * 60 * 1000)),
   }));
 }
@@ -718,17 +803,22 @@ function buildDemoLossTrxBatch() {
     product: row.product,
     rugi: formatMoney(row.rugi + Math.floor(Math.random() * 6) * 100),
     time: shortTime(new Date(Date.now() - (index * 2 + Math.floor(Math.random() * 6)) * 60 * 1000)),
+    demo: true,
   }));
 }
 
 function showDemoIncidentAndLossBatch() {
-  ALERTS_PRODUCT.splice(0, ALERTS_PRODUCT.length, ...buildDemoIncidentBatch());
-  ALERTS_RUGI.splice(0, ALERTS_RUGI.length, ...buildDemoLossTrxBatch());
+  const persistentIncidents = ALERTS_PRODUCT.filter((alert) => !alert.demo);
+  const persistentLosses = ALERTS_RUGI.filter((alert) => !alert.demo);
+  ALERTS_PRODUCT.splice(0, ALERTS_PRODUCT.length, ...persistentIncidents, ...buildDemoIncidentBatch());
+  ALERTS_RUGI.splice(0, ALERTS_RUGI.length, ...persistentLosses, ...buildDemoLossTrxBatch());
   renderAllAlerts();
 
   setTimeout(() => {
-    ALERTS_PRODUCT.splice(0, ALERTS_PRODUCT.length);
-    ALERTS_RUGI.splice(0, ALERTS_RUGI.length);
+    const keepIncidents = ALERTS_PRODUCT.filter((alert) => !alert.demo);
+    const keepLosses = ALERTS_RUGI.filter((alert) => !alert.demo);
+    ALERTS_PRODUCT.splice(0, ALERTS_PRODUCT.length, ...keepIncidents);
+    ALERTS_RUGI.splice(0, ALERTS_RUGI.length, ...keepLosses);
     renderAllAlerts();
   }, ALERT_DEMO_VISIBLE_MS);
 }
@@ -1001,6 +1091,7 @@ spinStyle.textContent = "@keyframes spin { to { transform: rotate(360deg); } }";
 document.head.appendChild(spinStyle);
 
 document.addEventListener("DOMContentLoaded", () => {
+  seedCumulativeFinance();
   renderTrx();
   renderTraffic();
   renderAllAlerts();
@@ -1098,7 +1189,7 @@ function buildFakeTransaction(statusOverride) {
   ];
 
   const products = ["iPLN", "DANAKH", "TSEL50", "I10", "S25", "iBPJSTK"];
-  const statuses = ["Success", "Success", "Success", "Success", "Success", "Reversed"];
+  const statuses = ["Success", "Success", "Success", "Success", "Success", "Reversed", "Failed", "Processing"];
   const status = statusOverride || rand(statuses);
   const product = rand(products);
   const supplier = rand(suppliers);
@@ -1114,6 +1205,16 @@ function buildFakeTransaction(statusOverride) {
   if (status === "Reversed") {
     dur = (Math.random() * 2 + 1).toFixed(3);
     reason = "Supplier timeout";
+  }
+
+  if (status === "Failed") {
+    dur = (Math.random() * 1.2 + 0.35).toFixed(3);
+    reason = "Transaction failed";
+  }
+
+  if (status === "Processing") {
+    dur = "0.000";
+    reason = "Transaction processing";
   }
 
   if (status === "Pending") {
@@ -1141,6 +1242,7 @@ function buildFakeTransaction(statusOverride) {
 function ingestTransaction(newTrx) {
   RAW.unshift(newTrx);
   RAW.pop();
+  addTransactionToFinance(newTrx);
   trackPendingTransaction(newTrx);
   renderTrx();
 
@@ -1242,6 +1344,7 @@ function resolvePendingTransaction(id) {
     trx.status = resolvedAsReversed ? "Reversed" : "Success";
     trx.dur = resolvedAsReversed ? (Math.random() * 2 + 1).toFixed(3) : (Math.random() * 0.45 + 0.08).toFixed(3);
     trx.reason = resolvedAsReversed ? "Supplier timeout" : "Transaction successful";
+    addTransactionToFinance(trx);
   }
 
   renderTrx();
