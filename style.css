@@ -966,27 +966,29 @@ tbody tr:hover td { background: var(--bg3); }
 }
 
 /* FIX TV: default tetap tampil 10 rows, kalau pilih 25/50/100 scroll di dalam table */
+/* FIX: Transaction list normal, tidak ikut membesar */
 .trx-card {
-  height: auto;
-  max-height: none;
-  overflow: hidden;
+  flex: 0 0 auto !important;
+  height: auto !important;
+  max-height: none !important;
 }
 
 .trx-scroll {
-  max-height: 640px;
-  overflow-y: auto;
-  overflow-x: auto;
+  flex: 0 0 auto !important;
+  max-height: 620px !important;
+  overflow-y: auto !important;
+  overflow-x: auto !important;
 }
 
-/* Row tetap tinggi enak dilihat, tapi 10 rows masih muat */
 .trx-table td {
-  padding-top: 17px;
-  padding-bottom: 17px;
+  height: auto !important;
+  padding-top: 13px !important;
+  padding-bottom: 13px !important;
 }
 
-/* Khusus layar TV / monitor besar */
-@media (min-height: 900px) {
-  .trx-scroll {
-    max-height: 720px;
-  }
+/* Kalau pilih rows banyak, baru scroll */
+.trx-card:has(#page-size option[value="100"]:checked) .trx-scroll,
+.trx-card:has(#page-size option[value="50"]:checked) .trx-scroll,
+.trx-card:has(#page-size option[value="25"]:checked) .trx-scroll {
+  max-height: 620px !important;
 }
