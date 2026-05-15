@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TRX Monitor - Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,300&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=18">
+  <link rel="stylesheet" href="style.css?v=19">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   </head>
   <body>
@@ -76,15 +76,15 @@
 
         <!-- FILTER BAR -->
         <div class="filter-bar fade-in fixed-elem">
-          <div class="filter-group"><div class="filter-label">Start Date</div><input class="filter-input" type="datetime-local" value="2026-05-15T00:00"></div>
-          <div class="filter-group"><div class="filter-label">End Date</div><input class="filter-input" type="datetime-local" value="2026-05-15T23:59"></div>
-          <div class="filter-group"><div class="filter-label">Client</div><select class="filter-input"><option value="">All Clients</option><option>bkpay</option><option>Hotelmurah</option><option>Bukalapak</option></select></div>
-          <div class="filter-group"><div class="filter-label">Supplier</div><select class="filter-input"><option value="">All Suppliers</option><option>[SMB]</option><option>[VSI]</option><option>[Indotel]</option></select></div>
-          <div class="filter-group"><div class="filter-label">Product</div><select class="filter-input"><option value="">All Products</option><option>DANAKH</option><option>iPLN</option><option>I10</option></select></div>
-          <div class="filter-group"><div class="filter-label">Status</div><select class="filter-input"><option value="">All Statuses</option><option>Success</option><option>Pending</option><option>Reversed</option></select></div>
+          <div class="filter-group"><div class="filter-label">Start Date</div><input id="filter-start" class="filter-input date-input" type="datetime-local" value="2026-05-15T00:00"></div>
+          <div class="filter-group"><div class="filter-label">End Date</div><input id="filter-end" class="filter-input date-input" type="datetime-local" value="2026-05-15T23:59"></div>
+          <div class="filter-group"><div class="filter-label">Client</div><select id="filter-client" class="filter-input"><option value="">All Clients</option></select></div>
+          <div class="filter-group"><div class="filter-label">Supplier</div><select id="filter-supplier" class="filter-input"><option value="">All Suppliers</option></select></div>
+          <div class="filter-group"><div class="filter-label">Product</div><select id="filter-product" class="filter-input"><option value="">All Products</option></select></div>
+          <div class="filter-group"><div class="filter-label">Status</div><select id="filter-status" class="filter-input"><option value="">All Statuses</option></select></div>
           <div class="filter-actions">
-            <button class="btn btn-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Search</button>
-            <button class="btn btn-ghost">Reset</button>
+            <button class="btn btn-primary" onclick="applyDashboardFilters()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Search</button>
+            <button class="btn btn-ghost" onclick="resetDashboardFilters()">Reset</button>
           </div>
         </div>
 
@@ -256,6 +256,6 @@
     </div><!-- end main -->
   </div>
 
-  <script src="script.js?v=18"></script>
+  <script src="script.js?v=19"></script>
   </body>
   </html>

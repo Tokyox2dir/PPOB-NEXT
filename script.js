@@ -160,6 +160,15 @@ const TOTAL_TRANSACTION_COUNT = 7615;
 let currentPage = 1;
 let pageSize = 10;
 let latestSuccessRate = "88.7%";
+const DEFAULT_FILTERS = {
+  start: "2026-05-15T00:00",
+  end: "2026-05-15T23:59",
+  client: "",
+  supplier: "",
+  product: "",
+  status: "",
+};
+let filterState = { ...DEFAULT_FILTERS };
 
 const CLIENT_STOP_NORMAL_MIN = 15;
 const CLIENT_STOP_IDLE_MS = 30 * 60 * 1000;
@@ -390,10 +399,123 @@ function buildDemoTransactions() {
 
 RAW.splice(0, RAW.length, ...buildDemoTransactions());
 
+function getClientName(row) {
+  return row.client.split(" ")[0];
+}
+
+function getSupplierName(row) {
+  return row.supplier.replace("[", "").replace("]", "");
+}
+
+function getRowDate(row) {
+  return new Date(`2026-05-15T${row.time}`);
+}
+
+function hasActiveFilters() {
+  return Object.keys(DEFAULT_FILTERS).some((key) => filterState[key] !== DEFAULT_FILTERS[key]);
+}
+
+function getFilteredRows() {
+  const start = filterState.start ? new Date(filterState.start) : null;
+  const end = filterState.end ? new Date(filterState.end) : null;
+
+  return RAW.filter((row) => {
+    const rowDate = getRowDate(row);
+    if (start && rowDate < start) return false;
+    if (end && rowDate > end) return false;
+    if (filterState.client && getClientName(row) !== filterState.client) return false;
+    if (filterState.supplier && getSupplierName(row) !== filterState.supplier) return false;
+    if (filterState.product && row.product !== filterState.product) return false;
+    if (filterState.status && row.status !== filterState.status) return false;
+    return true;
+  });
+}
+
+function getDashboardRows() {
+  const rows = getFilteredRows();
+  return rows.length ? rows : [];
+}
+
+function getFilteredTotalCount(rows = getFilteredRows()) {
+  return hasActiveFilters() ? rows.length : TOTAL_TRANSACTION_COUNT;
+}
+
+function populateFilterOptions() {
+  fillSelect("filter-client", "All Clients", [...new Set(RAW.map(getClientName))]);
+  fillSelect("filter-supplier", "All Suppliers", [...new Set(RAW.map(getSupplierName))]);
+  fillSelect("filter-product", "All Products", [...new Set(RAW.map((row) => row.product))]);
+  fillSelect("filter-status", "All Statuses", [...new Set(RAW.map((row) => row.status))]);
+  syncFilterInputs();
+}
+
+function fillSelect(id, label, values) {
+  const select = document.getElementById(id);
+  if (!select) return;
+  select.innerHTML = [`<option value="">${label}</option>`, ...values.sort().map((value) => `<option value="${value}">${value}</option>`)].join("");
+}
+
+function syncFilterInputs() {
+  const fields = {
+    "filter-start": filterState.start,
+    "filter-end": filterState.end,
+    "filter-client": filterState.client,
+    "filter-supplier": filterState.supplier,
+    "filter-product": filterState.product,
+    "filter-status": filterState.status,
+  };
+
+  Object.entries(fields).forEach(([id, value]) => {
+    const field = document.getElementById(id);
+    if (field) field.value = value;
+  });
+}
+
+function readFilterInputs() {
+  filterState = {
+    start: document.getElementById("filter-start")?.value || "",
+    end: document.getElementById("filter-end")?.value || "",
+    client: document.getElementById("filter-client")?.value || "",
+    supplier: document.getElementById("filter-supplier")?.value || "",
+    product: document.getElementById("filter-product")?.value || "",
+    status: document.getElementById("filter-status")?.value || "",
+  };
+}
+
+function refreshDashboard() {
+  renderTrx();
+  renderTraffic();
+  updateHourlyChartFromFilters();
+  updateSummaryStats();
+  renderPagination();
+}
+
+function applyDashboardFilters() {
+  readFilterInputs();
+  currentPage = 1;
+  refreshDashboard();
+}
+
+function resetDashboardFilters() {
+  filterState = { ...DEFAULT_FILTERS };
+  currentPage = 1;
+  syncFilterInputs();
+  refreshDashboard();
+}
+
 // Render traffic
 function renderTraffic() {
   const tbody = document.getElementById("traffic-tbody");
-  tbody.innerHTML = TRAFFIC.map((t) => {
+  const rows = getDashboardRows();
+  const trafficRows = hasActiveFilters()
+    ? buildFilteredTrafficRows(rows)
+    : TRAFFIC;
+
+  if (!trafficRows.length) {
+    tbody.innerHTML = `<tr><td colspan="5" class="empty-row">No client traffic matches current filters</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = trafficRows.map((t) => {
     const diff = t.today - t.yesterday;
     const pctValue = t.yesterday ? (diff / t.yesterday) * 100 : 0;
     const pct = pctValue.toFixed(1);
@@ -425,18 +547,46 @@ function renderTraffic() {
     </tr>`;
   }).join("");
 
-  TRAFFIC.forEach((t) => (t.lastTick = 0));
+  if (!hasActiveFilters()) TRAFFIC.forEach((t) => (t.lastTick = 0));
+}
+
+function buildFilteredTrafficRows(rows) {
+  const grouped = new Map();
+
+  rows.forEach((row) => {
+    const client = getClientName(row);
+    if (!grouped.has(client)) {
+      const baseline = TRAFFIC.find((item) => item.client === client);
+      grouped.set(client, {
+        client,
+        today: 0,
+        yesterday: baseline?.yesterday || 0,
+        lastTick: 0,
+      });
+    }
+    grouped.get(client).today += 1;
+  });
+
+  return [...grouped.values()]
+    .map((row) => ({
+      ...row,
+      yesterday: row.yesterday || Math.max(1, Math.round(row.today * 0.86)),
+    }))
+    .sort((a, b) => b.today - a.today);
 }
 
 function updateSummaryStats() {
-  const total = TRAFFIC.reduce((sum, t) => sum + t.today, 0);
-  const reversed = Math.max(0, Math.round(total * 0.112 + Math.random() * 8));
-  const pending = LIVE_PENDING.size;
-  const failed = countRowsByStatus("Failed");
-  const processing = countRowsByStatus("Processing");
+  const rows = getDashboardRows();
+  const total = hasActiveFilters() ? rows.length : TRAFFIC.reduce((sum, t) => sum + t.today, 0);
+  const reversed = hasActiveFilters() ? countRowsByStatus("Reversed", rows) : Math.max(0, Math.round(total * 0.112 + Math.random() * 8));
+  const pending = hasActiveFilters() ? countRowsByStatus("Pending", rows) : LIVE_PENDING.size;
+  const failed = countRowsByStatus("Failed", rows);
+  const processing = countRowsByStatus("Processing", rows);
   const success = Math.max(0, total - reversed - pending - failed - processing);
+  const revenue = hasActiveFilters() ? calculateRevenue(rows) : cumulativeRevenue;
+  const margin = hasActiveFilters() ? calculateMargin(rows) : cumulativeMargin;
   const successPct = total ? ((success / total) * 100).toFixed(1) : "0.0";
-  const marginPct = cumulativeRevenue ? ((cumulativeMargin / cumulativeRevenue) * 100).toFixed(2) : "0.00";
+  const marginPct = revenue ? ((margin / revenue) * 100).toFixed(2) : "0.00";
   latestSuccessRate = `${successPct}%`;
 
   document.getElementById("s-total").textContent = total.toLocaleString("id");
@@ -444,9 +594,9 @@ function updateSummaryStats() {
   document.getElementById("s-success-pct").textContent = latestSuccessRate;
   document.getElementById("s-pending").textContent = pending.toLocaleString("id");
   document.getElementById("s-rev").textContent = reversed.toLocaleString("id");
-  document.getElementById("s-revenue").textContent = formatMoney(cumulativeRevenue);
-  document.getElementById("s-margin").textContent = formatMoney(cumulativeMargin);
-  document.getElementById("s-revenue-pct").textContent = "Today";
+  document.getElementById("s-revenue").textContent = formatMoney(revenue);
+  document.getElementById("s-margin").textContent = formatMoney(margin);
+  document.getElementById("s-revenue-pct").textContent = hasActiveFilters() ? "Filtered" : "Today";
   document.getElementById("s-margin-pct").textContent = `${marginPct}% revenue`;
   updatePendingVisualState(pending);
   evaluateStatusIncident("Failed", failed);
@@ -465,19 +615,19 @@ function updatePendingVisualState(pendingCount = LIVE_PENDING.size) {
   pendingCard.classList.toggle("is-live-pending", pendingCount > 0);
 }
 
-function countRowsByStatus(status) {
-  return RAW.filter((row) => row.status === status).length;
+function countRowsByStatus(status, rows = getDashboardRows()) {
+  return rows.filter((row) => row.status === status).length;
 }
 
-function calculateRevenue() {
-  return RAW.reduce((sum, row) => {
+function calculateRevenue(rows = RAW) {
+  return rows.reduce((sum, row) => {
     if (row.status !== "Success") return sum;
     return sum + parseMoney(row.price);
   }, 0);
 }
 
-function calculateMargin() {
-  return RAW.reduce((sum, row) => {
+function calculateMargin(rows = RAW) {
+  return rows.reduce((sum, row) => {
     if (row.status !== "Success") return sum;
     const margin = parseSignedMoney(row.margin);
     return margin > 0 ? sum + margin : sum;
@@ -848,9 +998,19 @@ function switchAlertTab(tab, btn) {
 // Render transaction table
 function renderTrx() {
   const tbody = document.getElementById("trx-tbody");
+  const rows = getFilteredRows();
+  const totalRows = getFilteredTotalCount(rows);
   const start = (currentPage - 1) * pageSize;
-  const rowsThisPage = Math.max(0, Math.min(pageSize, TOTAL_TRANSACTION_COUNT - start));
-  const visibleRows = Array.from({ length: rowsThisPage }, (_, i) => RAW[(start + i) % RAW.length]);
+  const rowsThisPage = Math.max(0, Math.min(pageSize, totalRows - start));
+  const visibleRows = rows.length
+    ? Array.from({ length: rowsThisPage }, (_, i) => rows[(start + i) % rows.length])
+    : [];
+
+  if (!visibleRows.length) {
+    tbody.innerHTML = `<tr><td colspan="12" class="empty-row">No transactions match current filters</td></tr>`;
+    return;
+  }
+
   tbody.innerHTML = visibleRows
     .map((r, i) => {
       const stcls = r.status.toLowerCase();
@@ -858,17 +1018,17 @@ function renderTrx() {
       const marginClass = parseSignedMoney(r.margin) < 0 ? "loss" : "";
       const rowClass = stcls === "pending" ? "trx-row-pending" : "";
       return `<tr class="${rowClass}">
-      <td style="color:var(--text3);font-size:11px;">${start + i + 1}</td>
+      <td><span class="row-number">${start + i + 1}</span></td>
       <td><span class="trx-id">${r.id}</span></td>
       <td><span class="client-tag">${clientShort}</span></td>
       <td><span class="sup-badge">${r.supplier.replace("[", "").replace("]", "")}</span></td>
       <td><span class="mono-sm" style="color:var(--accent2);">${r.product}</span></td>
       <td><span class="mono-sm">${r.dest}</span></td>
-      <td><span class="mono-sm" style="color:var(--text3);">15-05 ${r.time}</span></td>
-      <td><span class="mono-sm" style="color:${parseFloat(r.dur) > 0.5 ? "var(--warn)" : "var(--text3)"};">${r.dur}s</span></td>
+      <td><span class="mono-sm request-time">15-05 ${r.time}</span></td>
+      <td><span class="mono-sm duration-time ${parseFloat(r.dur) > 0.5 ? "slow" : ""}">${r.dur}s</span></td>
       <td><span class="price-text">${r.price}</span></td>
       <td><span class="margin-text ${marginClass}">${r.margin}</span></td>
-      <td style="color:var(--text3);max-width:120px;overflow:hidden;text-overflow:ellipsis;">${r.reason}</td>
+      <td><span class="reason-text">${r.reason}</span></td>
       <td><span class="status-pill ${stcls}">${r.status}</span></td>
     </tr>`;
     })
@@ -878,14 +1038,15 @@ function renderTrx() {
 // Pagination
 function renderPagination() {
   const wrap = document.getElementById("page-btns");
-  const totalPages = Math.ceil(TOTAL_TRANSACTION_COUNT / pageSize);
-  const end = Math.min(currentPage * pageSize, TOTAL_TRANSACTION_COUNT);
-  const start = (currentPage - 1) * pageSize + 1;
+  const totalRows = getFilteredTotalCount();
+  const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
+  const end = totalRows ? Math.min(currentPage * pageSize, totalRows) : 0;
+  const start = totalRows ? (currentPage - 1) * pageSize + 1 : 0;
   const pageInfo = document.getElementById("trx-page-info");
   const cardSummary = document.getElementById("trx-card-summary");
   const pageSizeSelect = document.getElementById("page-size");
-  if (pageInfo) pageInfo.innerHTML = `Showing <b>${start.toLocaleString("id")}-${end.toLocaleString("id")}</b> of <b>${TOTAL_TRANSACTION_COUNT.toLocaleString("id")}</b> transactions`;
-  if (cardSummary) cardSummary.innerHTML = `${TOTAL_TRANSACTION_COUNT.toLocaleString("id")} rows - Page <b style="color:var(--text2);">${currentPage}</b> of ${totalPages.toLocaleString("id")}`;
+  if (pageInfo) pageInfo.innerHTML = `Showing <b>${start.toLocaleString("id")}-${end.toLocaleString("id")}</b> of <b>${totalRows.toLocaleString("id")}</b> transactions`;
+  if (cardSummary) cardSummary.innerHTML = `${totalRows.toLocaleString("id")} rows - Page <b>${currentPage}</b> of ${totalPages.toLocaleString("id")}`;
   if (pageSizeSelect) pageSizeSelect.value = String(pageSize);
 
   const pages = getPaginationPages(totalPages, currentPage);
@@ -912,7 +1073,7 @@ function getPaginationPages(totalPages, activePage) {
 }
 
 function goPage(n) {
-  const totalPages = Math.ceil(TOTAL_TRANSACTION_COUNT / pageSize);
+  const totalPages = Math.max(1, Math.ceil(getFilteredTotalCount() / pageSize));
   currentPage = Math.max(1, Math.min(n, totalPages));
   renderTrx();
   renderPagination();
@@ -923,6 +1084,34 @@ function setPageSize(size) {
   currentPage = 1;
   renderTrx();
   renderPagination();
+}
+
+function updateHourlyChartFromFilters() {
+  if (!chartHourly) return;
+
+  if (!hasActiveFilters()) {
+    chartHourly.data.labels = ["05:00", "06:00", "07:00", "08:00", "09:00", "10:00", "11:00", "11:19"];
+    chartHourly.data.datasets[0].data = [420, 510, 780, 690, 980, 1200, 1100, 1350];
+    chartHourly.data.datasets[1].data = [380, 450, 600, 880, 740, 990, 1050, 970];
+    chartHourly.update("none");
+    return;
+  }
+
+  const buckets = new Map();
+  getFilteredRows().forEach((row) => {
+    const hour = row.time.slice(0, 2);
+    const label = `${hour}:00`;
+    buckets.set(label, (buckets.get(label) || 0) + 1);
+  });
+
+  const labels = [...buckets.keys()].sort();
+  const today = labels.map((label) => buckets.get(label));
+  const yesterday = today.map((value, index) => Math.max(0, Math.round(value * (0.72 + (index % 3) * 0.12))));
+
+  chartHourly.data.labels = labels.length ? labels : ["No Data"];
+  chartHourly.data.datasets[0].data = labels.length ? today : [0];
+  chartHourly.data.datasets[1].data = labels.length ? yesterday : [0];
+  chartHourly.update("none");
 }
 
 // Charts
@@ -1092,11 +1281,13 @@ document.head.appendChild(spinStyle);
 
 document.addEventListener("DOMContentLoaded", () => {
   seedCumulativeFinance();
+  populateFilterOptions();
   renderTrx();
   renderTraffic();
   renderAllAlerts();
   renderPagination();
   initCharts();
+  updateHourlyChartFromFilters();
   updateSummaryStats();
   simulateLiveTraffic();
   startPendingDemoFeed();
@@ -1245,6 +1436,7 @@ function ingestTransaction(newTrx) {
   addTransactionToFinance(newTrx);
   trackPendingTransaction(newTrx);
   renderTrx();
+  renderPagination();
 
   const clientName = newTrx.client.split(" ")[0];
   const t = TRAFFIC.find((row) => row.client === clientName) || rand(TRAFFIC);
@@ -1271,7 +1463,8 @@ function ingestTransaction(newTrx) {
   renderTraffic();
   updateSummaryStats();
   processAlertRules(newTrx, t);
-  updateHourlyChart(newTrx.status);
+  if (hasActiveFilters()) updateHourlyChartFromFilters();
+  else updateHourlyChart(newTrx.status);
 }
 
 function updateHourlyChart(status) {
@@ -1348,6 +1541,7 @@ function resolvePendingTransaction(id) {
   }
 
   renderTrx();
+  renderPagination();
   updateSummaryStats();
 }
 
