@@ -54,8 +54,7 @@ body {
   background: var(--bg);
   color: var(--text);
   margin: 0;
-  height: 100vh;
-  min-height: 720px;
+  min-height: 100vh;
   overflow: auto;
   font-size: 14px;
   line-height: 1.5;
@@ -64,8 +63,7 @@ body {
 
 .layout {
   display: flex;
-  height: 100vh;
-  min-height: 720px;
+  min-height: 100vh;
   min-width: 1180px;
 }
 
@@ -73,8 +71,7 @@ body {
   margin-left: 230px;
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  min-height: 720px;
+  min-height: 100vh;
   flex: 1;
   min-width: 950px;
 }
@@ -84,9 +81,10 @@ body {
   display: flex;
   flex-direction: column;
   padding: 16px 20px;
-  overflow: hidden;
+  overflow: visible;
   gap: 14px;
-  min-height: 0;
+  min-height: calc(100vh - 52px);
+  height: auto;
 }
 
 .fixed-elem { flex-shrink: 0; }
@@ -179,9 +177,8 @@ select.filter-input { cursor: pointer; }
   display: flex;
   flex-direction: column;
   gap: 14px;
-  height: 100%;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* Top charts row */
@@ -284,13 +281,14 @@ tbody tr:hover td { background: var(--bg3); }
   min-height: 0;
   -webkit-overflow-scrolling: touch;
 }
-.trx-scroll { flex: 1 1 auto; max-height: none; }
+.trx-card { flex: 1 1 auto; }
+.trx-scroll { flex: 1 1 auto; max-height: none; overflow: auto; }
 .traffic-scroll { max-height: 228px; }
 .balance-scroll { max-height: 150px; }
 .alert-scroll {
-  max-height: none;
+  max-height: 250px;
   min-height: 0;
-  flex: 1 1 auto;
+  flex: 0 1 250px;
   overflow: auto;
 }
 
@@ -299,6 +297,23 @@ tbody tr:hover td { background: var(--bg3); }
 .traffic-table,
 .alert-table { min-width: 560px; }
 .balance-table { min-width: 620px; }
+.trx-table th { padding-top: 13px; padding-bottom: 13px; }
+.trx-table td {
+  padding-top: clamp(13px, 1.1vh, 22px);
+  padding-bottom: clamp(13px, 1.1vh, 22px);
+  font-size: 12.5px;
+}
+.trx-table .mono-sm,
+.trx-table .price-text,
+.trx-table .margin-text,
+.trx-table .trx-id {
+  font-size: 12px;
+}
+.trx-table .client-tag,
+.trx-table .sup-badge,
+.trx-table .status-pill {
+  font-size: 11.5px;
+}
 .traffic-client { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--text); }
 .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); opacity: 0.5; flex-shrink: 0; }
 .live-dot.hot { background: var(--success); opacity: 1; box-shadow: 0 0 0 4px var(--success-bg); animation: pulse 0.9s ease infinite; }
