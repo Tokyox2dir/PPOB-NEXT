@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TRX Monitor — Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,300&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=9">
+  <link rel="stylesheet" href="style.css?v=10">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   </head>
   <body>
@@ -173,7 +173,21 @@
               </div>
             </div>
 
-            <!-- Alert Monitor — 3 tab -->
+            <!-- Balance Monitor -->
+            <div class="card fade-in fixed-elem balance-card">
+              <div class="card-header">
+                <div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 11h4M6 9h5M6 13h3"/></svg> Balance Monitor</div>
+                <span class="alert-count-badge warn" id="balance-count">0 low</span>
+              </div>
+              <div class="table-wrap">
+                <table class="alert-table balance-table">
+                  <thead><tr><th>Level</th><th>Akun</th><th>Tipe</th><th>Saldo</th><th>Threshold</th></tr></thead>
+                  <tbody id="alert-balance-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Alert Monitor -->
             <div class="card fade-in flex-fill">
               <div class="card-header fixed-elem alert-header">
                 <div class="alert-header-top">
@@ -237,6 +251,6 @@
     </div><!-- end main -->
   </div>
 
-  <script src="script.js?v=9"></script>
+  <script src="script.js?v=10"></script>
   </body>
   </html>

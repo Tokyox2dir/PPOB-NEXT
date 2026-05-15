@@ -186,6 +186,15 @@ const ALERTS_RUGI = [
   },
 ];
 
+// ── ALERT: LOW BALANCE ────────────────────────────────────
+const BALANCE_ACCOUNTS = [
+  { name: "toplink", type: "Supplier", balance: 36870879, threshold: 50000000 },
+  { name: "VSI", type: "Supplier", balance: 184500000, threshold: 100000000 },
+  { name: "SMB", type: "Supplier", balance: 78200000, threshold: 100000000 },
+  { name: "bkpay", type: "Client", balance: 126000000, threshold: 75000000 },
+  { name: "Hotelmurah", type: "Client", balance: 42800000, threshold: 50000000 },
+];
+
 // ── RENDER TRAFFIC ───────────────────────────────────────
 function renderTraffic() {
   const tbody = document.getElementById("traffic-tbody");
@@ -323,19 +332,66 @@ function renderAlertRugi() {
   ).join("");
 }
 
+function getLowBalanceAlerts() {
+  return BALANCE_ACCOUNTS
+    .map((account) => {
+      const pct = account.threshold ? (account.balance / account.threshold) * 100 : 100;
+      const level = pct <= 50 ? "critical" : pct < 100 ? "warn" : "ok";
+      return { ...account, pct, level };
+    })
+    .filter((account) => account.level !== "ok")
+    .sort((a, b) => a.pct - b.pct);
+}
+
+function renderAlertBalance() {
+  const tbody = document.getElementById("alert-balance-tbody");
+  const lowBalances = getLowBalanceAlerts();
+
+  if (!lowBalances.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text3); padding:20px 0; font-size:12px;">Tidak ada saldo rendah terdeteksi</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = lowBalances.map((a) => {
+    const cls = a.level === "critical" ? "critical" : "warn";
+    return `<tr>
+      <td>
+        <span class="alert-badge ${cls}">
+          <span class="alert-dot ${cls === "critical" ? "blink" : ""}" style="background:${cls === "critical" ? "var(--danger)" : "var(--warn)"};"></span>
+          ${cls.toUpperCase()}
+        </span>
+      </td>
+      <td><span class="balance-account">${a.name}</span></td>
+      <td><span class="client-tag">${a.type}</span></td>
+      <td><span class="balance-val ${cls}">${formatRupiah(a.balance)}</span></td>
+      <td>
+        <span class="balance-val ${cls}">${formatRupiah(a.balance)}</span>
+        <div class="balance-meter" title="Threshold ${formatRupiah(a.threshold)}"><div class="balance-meter-fill ${cls}" style="width:${Math.max(4, Math.min(100, a.pct))}%;"></div></div>
+      </td>
+    </tr>`;
+  }).join("");
+}
+
 function renderAllAlerts() {
   renderAlertStop();
   renderAlertProduct();
   renderAlertRugi();
+  renderAlertBalance();
   updateAlertBadges();
 }
 
 function updateAlertBadges() {
-  const criticalCount = ALERTS_PRODUCT.filter((a) => a.level === "critical").length + ALERTS_STOP.length;
-  const warnCount = ALERTS_PRODUCT.filter((a) => a.level === "warn").length + ALERTS_RUGI.length;
+  const balanceAlerts = getLowBalanceAlerts();
+  const criticalCount = ALERTS_PRODUCT.filter((a) => a.level === "critical").length + ALERTS_STOP.length + balanceAlerts.filter((a) => a.level === "critical").length;
+  const warnCount = ALERTS_PRODUCT.filter((a) => a.level === "warn").length + ALERTS_RUGI.length + balanceAlerts.filter((a) => a.level === "warn").length;
   const headerBadges = document.querySelectorAll(".alert-count-badge");
   if (headerBadges[0]) headerBadges[0].textContent = `${criticalCount} kritis`;
   if (headerBadges[1]) headerBadges[1].textContent = `${warnCount} warn`;
+  const balanceCount = document.getElementById("balance-count");
+  if (balanceCount) {
+    balanceCount.textContent = `${balanceAlerts.length} low`;
+    balanceCount.classList.toggle("is-alerting", balanceAlerts.length > 0);
+  }
 
   const tabBadges = document.querySelectorAll(".alert-tab .tab-badge");
   updateTabBadge(tabBadges[0], ALERTS_STOP.length);
@@ -368,6 +424,7 @@ function upsertClientStopAlert(alert) {
 function processAlertRules(trx, trafficRow) {
   const now = shortTime();
   const margin = parseSignedMoney(trx.margin);
+  simulateBalanceUsage(trx);
 
   if (margin < 0) {
     ALERTS_RUGI.unshift({
@@ -385,6 +442,18 @@ function processAlertRules(trx, trafficRow) {
 
   updateClientStopAlerts();
   renderAllAlerts();
+}
+
+function simulateBalanceUsage(trx) {
+  const price = parseMoney(trx.price);
+  if (!price) return;
+
+  const supplierName = trx.supplier.replace("[", "").replace("]", "");
+  const supplier = BALANCE_ACCOUNTS.find((a) => a.type === "Supplier" && a.name.toLowerCase() === supplierName.toLowerCase());
+  const client = BALANCE_ACCOUNTS.find((a) => a.type === "Client" && trx.client.toLowerCase().startsWith(a.name.toLowerCase()));
+
+  if (supplier) supplier.balance = Math.max(0, supplier.balance - price);
+  if (client) client.balance = Math.max(0, client.balance - Math.round(price * 0.08));
 }
 
 function updateClientStopAlerts() {
@@ -648,6 +717,10 @@ function parseSignedMoney(str) {
 function formatMoney(amount) {
   const sign = amount < 0 ? "-" : "";
   return `Rp${sign}${Math.abs(amount).toLocaleString("id")}`;
+}
+
+function formatRupiah(amount) {
+  return `Rp${Math.round(amount).toLocaleString("id")}`;
 }
 
 function shortTime(date = new Date()) {
