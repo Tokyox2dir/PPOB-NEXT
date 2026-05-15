@@ -929,3 +929,64 @@ tbody tr:hover td { background: var(--bg3); }
     padding-bottom: 16px;
   }
 }
+
+/* FIX: Transaction table tetap fixed height, row banyak tinggal scroll */
+.trx-card {
+  height: clamp(430px, 46vh, 620px);
+  max-height: clamp(430px, 46vh, 620px);
+  overflow: hidden;
+}
+
+.trx-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+.trx-table {
+  height: auto;
+}
+
+/* Biar kanan juga tetap rapi */
+.grid-right {
+  height: 100%;
+  min-height: 0;
+}
+
+.balance-scroll {
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.alert-scroll {
+  flex: 1 1 auto;
+  max-height: none;
+  overflow-y: auto;
+}
+
+/* FIX TV: default tetap tampil 10 rows, kalau pilih 25/50/100 scroll di dalam table */
+.trx-card {
+  height: auto;
+  max-height: none;
+  overflow: hidden;
+}
+
+.trx-scroll {
+  max-height: 640px;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+/* Row tetap tinggi enak dilihat, tapi 10 rows masih muat */
+.trx-table td {
+  padding-top: 17px;
+  padding-bottom: 17px;
+}
+
+/* Khusus layar TV / monitor besar */
+@media (min-height: 900px) {
+  .trx-scroll {
+    max-height: 720px;
+  }
+}
