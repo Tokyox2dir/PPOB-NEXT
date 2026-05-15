@@ -6,7 +6,7 @@ setTimeout(() => {
   }
 }, 100);
 
-// ── DATA ─────────────────────────────────────────────────
+// Data
 const RAW = [
   {
     id: "2445900",
@@ -18,7 +18,7 @@ const RAW = [
     dur: "0.281",
     price: "Rp0",
     margin: "Rp0",
-    reason: "Transaksi berhasil",
+    reason: "Transaction successful",
     status: "Success",
   },
   {
@@ -31,7 +31,7 @@ const RAW = [
     dur: "0.253",
     price: "Rp0",
     margin: "Rp0",
-    reason: "Transaksi berhasil",
+    reason: "Transaction successful",
     status: "Success",
   },
   {
@@ -44,7 +44,7 @@ const RAW = [
     dur: "0.281",
     price: "Rp0",
     margin: "Rp0",
-    reason: "Transaksi berhasil",
+    reason: "Transaction successful",
     status: "Success",
   },
   {
@@ -57,7 +57,7 @@ const RAW = [
     dur: "0.083",
     price: "Rp202.400",
     margin: "Rp300",
-    reason: "Transaksi berhasil",
+    reason: "Transaction successful",
     status: "Success",
   },
   {
@@ -70,7 +70,7 @@ const RAW = [
     dur: "0.096",
     price: "Rp80.400",
     margin: "Rp300",
-    reason: "Transaksi berhasil",
+    reason: "Transaction successful",
     status: "Success",
   },
   {
@@ -83,7 +83,7 @@ const RAW = [
     dur: "0.106",
     price: "Rp50.400",
     margin: "Rp300",
-    reason: "Transaksi berhasil",
+    reason: "Transaction successful",
     status: "Success",
   },
   {
@@ -96,7 +96,7 @@ const RAW = [
     dur: "0.256",
     price: "Rp0",
     margin: "Rp0",
-    reason: "Transaksi berhasil",
+    reason: "Transaction successful",
     status: "Success",
   },
   {
@@ -109,7 +109,7 @@ const RAW = [
     dur: "0.322",
     price: "Rp0",
     margin: "Rp0",
-    reason: "Transaksi berhasil",
+    reason: "Transaction successful",
     status: "Success",
   },
   {
@@ -122,7 +122,7 @@ const RAW = [
     dur: "0.183",
     price: "Rp11.470",
     margin: "Rp45",
-    reason: "Transaksi berhasil",
+    reason: "Transaction successful",
     status: "Success",
   },
   {
@@ -135,19 +135,31 @@ const RAW = [
     dur: "0.909",
     price: "Rp0",
     margin: "Rp0",
-    reason: "Transaksi berhasil",
+    reason: "Transaction successful",
     status: "Success",
   },
 ];
 
-// ── TRAFFIC DATA ─────────────────────────────────────────
+// Traffic data
 const TRAFFIC = [
   { client: "bkpay", today: 3820, yesterday: 3210, normal30mTraffic: 42, lastTrafficAt: Date.now(), lastTick: 0 },
   { client: "Hotelmurah", today: 1840, yesterday: 1990, normal30mTraffic: 28, lastTrafficAt: Date.now(), lastTick: 0 },
-  { client: "Bukalapak", today: 980, yesterday: 870, normal30mTraffic: 17, lastTrafficAt: Date.now(), lastTick: 0 },
+  { client: "Bukalapak", today: 980, yesterday: 870, normal30mTraffic: 17, lastTrafficAt: Date.now() - 36 * 60 * 1000, lastTick: 0 },
   { client: "Telin", today: 620, yesterday: 720, normal30mTraffic: 9, lastTrafficAt: Date.now(), lastTick: 0 },
   { client: "correct", today: 355, yesterday: 280, normal30mTraffic: 6, lastTrafficAt: Date.now(), lastTick: 0 },
+  { client: "ShopeePay", today: 890, yesterday: 920, normal30mTraffic: 18, lastTrafficAt: Date.now() - 42 * 60 * 1000, lastTick: 0 },
+  { client: "Tokopedia", today: 760, yesterday: 710, normal30mTraffic: 16, lastTrafficAt: Date.now() - 33 * 60 * 1000, lastTick: 0 },
+  { client: "Dana", today: 690, yesterday: 640, normal30mTraffic: 15, lastTrafficAt: Date.now() - 31 * 60 * 1000, lastTick: 0 },
+  { client: "Blibli", today: 410, yesterday: 455, normal30mTraffic: 11, lastTrafficAt: Date.now(), lastTick: 0 },
+  { client: "Traveloka", today: 385, yesterday: 360, normal30mTraffic: 10, lastTrafficAt: Date.now(), lastTick: 0 },
+  { client: "MitraPay", today: 240, yesterday: 315, normal30mTraffic: 8, lastTrafficAt: Date.now(), lastTick: 0 },
+  { client: "Fastpay", today: 215, yesterday: 190, normal30mTraffic: 7, lastTrafficAt: Date.now(), lastTick: 0 },
 ];
+
+const TOTAL_TRANSACTION_COUNT = 7615;
+let currentPage = 1;
+let pageSize = 10;
+let latestSuccessRate = "88.7%";
 
 const CLIENT_STOP_NORMAL_MIN = 15;
 const CLIENT_STOP_IDLE_MS = 30 * 60 * 1000;
@@ -155,11 +167,17 @@ const DEMO_PENDING_INTERVAL_MS = 5000;
 const DEMO_PENDING_RESOLVE_MS = 2000;
 const LIVE_PENDING = new Map();
 
-// ── ALERT: CLIENT STOP ───────────────────────────────────
+// Alert: client stop
 const ALERTS_STOP = [
+  { client: "Bukalapak [H2H IRS]", product: "S50", detail: "No new traffic for 32 minutes, normally 18 trx / 30 minutes", since: "18:31" },
+  { client: "Tokopedia [API]", product: "DANAKH", detail: "No new traffic for 35 minutes, normally 16 trx / 30 minutes", since: "18:28" },
+  { client: "ShopeePay [H2H]", product: "PLN", detail: "No new traffic for 41 minutes, normally 22 trx / 30 minutes", since: "18:22" },
+  { client: "Dana [API]", product: "TSEL50", detail: "Traffic stopped on prepaid route", since: "18:18" },
+  { client: "Blibli [H2H]", product: "I10", detail: "No callback traffic after inquiry spike", since: "18:12" },
+  { client: "Traveloka [H2H]", product: "iPLN", detail: "No payment request after normal inquiry traffic", since: "18:08" },
 ];
 
-// ── ALERT: PRODUCT GANGGUAN ──────────────────────────────
+// Alert: product incidents
 const ALERTS_PRODUCT = [
   {
     level: "critical",
@@ -170,12 +188,17 @@ const ALERTS_PRODUCT = [
   {
     level: "warn",
     product: "DANAKH / [SMB]",
-    desc: "RC 68 melewati threshold filter IT",
+    desc: "RC 68 exceeded IT threshold filter",
     time: "11:18",
   },
+  { level: "critical", product: "S50 / [Kisel ApiHub]", desc: "Supplier callback: product close", time: "18:57" },
+  { level: "warn", product: "I10 / [Indotel]", desc: "RC 91 exceeded IT threshold filter", time: "18:49" },
+  { level: "warn", product: "PLN / [VSI]", desc: "RC 96 repeated on inquiry route", time: "18:41" },
+  { level: "critical", product: "iBPJSTK / [Bima Sakti]", desc: "Supplier maintenance callback received", time: "18:33" },
+  { level: "warn", product: "TSEL50 / [Kisel ApiHub]", desc: "RC 99 crossed product anomaly threshold", time: "18:26" },
 ];
 
-// ── ALERT: TRANSAKSI RUGI ────────────────────────────────
+// Alert: loss transactions
 const ALERTS_RUGI = [
   {
     id: "2445881",
@@ -184,18 +207,98 @@ const ALERTS_RUGI = [
     rugi: "Rp1.200",
     time: "11:08",
   },
+  { id: "2455529", client: "Bukalapak [H2H IRS]", product: "S50", rugi: "Rp350", time: "19:03" },
+  { id: "2455518", client: "Hotelmurah [H2H]", product: "PLN", rugi: "Rp850", time: "19:03" },
+  { id: "2455488", client: "Tokopedia [API]", product: "TSEL50", rugi: "Rp500", time: "18:59" },
+  { id: "2455462", client: "ShopeePay [H2H]", product: "DANAKH", rugi: "Rp1.450", time: "18:54" },
+  { id: "2455410", client: "Dana [API]", product: "I10", rugi: "Rp275", time: "18:48" },
 ];
 
-// ── ALERT: LOW BALANCE ────────────────────────────────────
+// Alert: low balance
 const BALANCE_ACCOUNTS = [
   { name: "toplink", type: "Supplier", balance: 36870879, threshold: 50000000 },
   { name: "VSI", type: "Supplier", balance: 184500000, threshold: 100000000 },
   { name: "SMB", type: "Supplier", balance: 78200000, threshold: 100000000 },
   { name: "bkpay", type: "Client", balance: 126000000, threshold: 75000000 },
   { name: "Hotelmurah", type: "Client", balance: 42800000, threshold: 50000000 },
+  { name: "Kisel ApiHub", type: "Supplier", balance: 21450000, threshold: 60000000 },
+  { name: "Indotel", type: "Supplier", balance: 88500000, threshold: 100000000 },
+  { name: "Bima Sakti", type: "Supplier", balance: 31750000, threshold: 75000000 },
+  { name: "Bukalapak", type: "Client", balance: 58250000, threshold: 80000000 },
+  { name: "ShopeePay", type: "Client", balance: 45500000, threshold: 65000000 },
+  { name: "Tokopedia", type: "Client", balance: 93500000, threshold: 100000000 },
+  { name: "Dana", type: "Client", balance: 27500000, threshold: 50000000 },
+  { name: "Traveloka", type: "Client", balance: 120000000, threshold: 90000000 },
 ];
 
-// ── RENDER TRAFFIC ───────────────────────────────────────
+function createSeedTransactions() {
+  return [
+    { id: "2455541", client: "bkpay [H2H]", supplier: "[SMB]", product: "DANAKH", dest: "081291997397", time: "19:04:20", dur: "0.083", price: "Rp30.400", margin: "Rp300", reason: "Transaction is being processed", status: "Pending" },
+    { id: "2455538", client: "Hotelmurah [H2H]", supplier: "[VSI]", product: "iPLN", dest: "142640042088", time: "19:04:15", dur: "0.530", price: "Rp0", margin: "Rp0", reason: "Bill already paid", status: "Reversed" },
+    { id: "2455537", client: "Hotelmurah [H2H]", supplier: "[VSI]", product: "iPLN", dest: "517300254552", time: "19:04:15", dur: "0.242", price: "Rp0", margin: "Rp0", reason: "Bill already paid", status: "Reversed" },
+    { id: "2455536", client: "bkpay [H2H]", supplier: "[SMB]", product: "DANAKH", dest: "082345716145", time: "19:04:14", dur: "0.079", price: "Rp100.400", margin: "Rp300", reason: "Transaction successful", status: "Success" },
+    { id: "2455535", client: "bkpay [H2H]", supplier: "[SMB]", product: "DANAKH", dest: "083183330033", time: "19:04:11", dur: "0.083", price: "Rp20.400", margin: "Rp300", reason: "Transaction successful", status: "Success" },
+    { id: "2455534", client: "bkpay [H2H]", supplier: "[SMB]", product: "DANAKH", dest: "08218001237", time: "19:04:10", dur: "0.094", price: "Rp20.400", margin: "Rp300", reason: "Transaction successful", status: "Success" },
+    { id: "2455533", client: "Hotelmurah [H2H]", supplier: "[VSI]", product: "iPLN", dest: "546500150772", time: "19:04:10", dur: "0.358", price: "Rp0", margin: "Rp0", reason: "Transaction successful", status: "Success" },
+    { id: "2455531", client: "Hotelmurah [H2H]", supplier: "[VSI]", product: "iPLN", dest: "517300254806", time: "19:03:56", dur: "0.230", price: "Rp0", margin: "Rp0", reason: "Bill already paid", status: "Reversed" },
+    { id: "2455530", client: "bkpay [H2H]", supplier: "[SMB]", product: "DANAKH", dest: "089508142898", time: "19:03:56", dur: "0.095", price: "Rp44.400", margin: "Rp300", reason: "Transaction successful", status: "Success" },
+    { id: "2455529", client: "Bukalapak [H2H IRS]", supplier: "[Kisel ApiHub]", product: "S50", dest: "082217164845", time: "19:03:55", dur: "0.056", price: "Rp49.210", margin: "Rp40", reason: "Transaction successful", status: "Success" },
+    { id: "2455528", client: "Hotelmurah [H2H]", supplier: "[VSI]", product: "iPLN", dest: "143500017026", time: "19:03:51", dur: "0.338", price: "Rp0", margin: "Rp0", reason: "Transaction successful", status: "Success" },
+    { id: "2455527", client: "bkpay [H2H]", supplier: "[SMB]", product: "DANAKH", dest: "085361535743", time: "19:03:49", dur: "0.081", price: "Rp97.900", margin: "Rp300", reason: "Transaction successful", status: "Success" },
+    { id: "2455526", client: "bkpay [H2H]", supplier: "[SMB]", product: "DANAKH", dest: "082247444304", time: "19:03:43", dur: "0.091", price: "Rp110.400", margin: "Rp300", reason: "Transaction successful", status: "Success" },
+    { id: "2455525", client: "Bukalapak [H2H IRS]", supplier: "[Kisel ApiHub]", product: "S50", dest: "081233067645", time: "19:03:39", dur: "0.065", price: "Rp49.210", margin: "Rp40", reason: "Transaction successful", status: "Success" },
+    { id: "2455524", client: "bkpay [H2H]", supplier: "[SMB]", product: "DANAKH", dest: "083155480725", time: "19:03:38", dur: "0.104", price: "Rp20.400", margin: "Rp300", reason: "Transaction successful", status: "Success" },
+    { id: "2455523", client: "Bukalapak [H2H IRS]", supplier: "[Kisel ApiHub]", product: "S50", dest: "08134861113", time: "19:03:38", dur: "0.054", price: "Rp49.210", margin: "Rp40", reason: "Transaction successful", status: "Success" },
+    { id: "2455522", client: "bkpay [H2H]", supplier: "[SMB]", product: "DANAKH", dest: "0881023353371", time: "19:03:37", dur: "0.089", price: "Rp70.400", margin: "Rp300", reason: "Transaction successful", status: "Success" },
+    { id: "2455521", client: "bkpay [H2H]", supplier: "[SMB]", product: "DANAKH", dest: "082358795641", time: "19:03:34", dur: "0.100", price: "Rp20.400", margin: "Rp300", reason: "Transaction successful", status: "Success" },
+    { id: "2455520", client: "Hotelmurah [H2H]", supplier: "[VSI]", product: "iPLN", dest: "142600688983", time: "19:03:33", dur: "0.252", price: "Rp0", margin: "Rp0", reason: "Transaction successful", status: "Success" },
+    { id: "2455519", client: "Bukalapak [H2H IRS]", supplier: "[Kisel ApiHub]", product: "S50", dest: "081278445607", time: "19:03:28", dur: "0.054", price: "Rp49.210", margin: "Rp40", reason: "Transaction successful", status: "Success" },
+    { id: "2455518", client: "Hotelmurah [H2H]", supplier: "[VSI]", product: "PLN", dest: "517300254806", time: "19:03:27", dur: "0.398", price: "Rp12.813", margin: "Rp30", reason: "Transaction successful", status: "Success" },
+    { id: "2455517", client: "Hotelmurah [H2H]", supplier: "[VSI]", product: "iPLN", dest: "517300254806", time: "19:03:26", dur: "0.231", price: "Rp0", margin: "Rp0", reason: "Transaction successful", status: "Success" },
+    { id: "2455514", client: "Hotelmurah [H2H]", supplier: "[VSI]", product: "iPLN", dest: "45171476869", time: "19:03:24", dur: "0.118", price: "Rp0", margin: "Rp0", reason: "Invalid destination number", status: "Reversed" },
+    { id: "2455513", client: "Hotelmurah [H2H]", supplier: "[VSI]", product: "iPLN", dest: "142200826901", time: "19:03:23", dur: "0.364", price: "Rp0", margin: "Rp0", reason: "Invalid destination number", status: "Reversed" },
+    { id: "2455512", client: "bkpay [H2H]", supplier: "[SMB]", product: "DANAKH", dest: "083125832103", time: "19:03:22", dur: "0.089", price: "Rp350.400", margin: "Rp300", reason: "Transaction successful", status: "Success" },
+  ];
+}
+
+function buildDemoTransactions() {
+  const seed = createSeedTransactions();
+  const clients = ["bkpay [H2H]", "Hotelmurah [H2H]", "Bukalapak [H2H IRS]", "Telin [H2H Sync]", "ShopeePay [H2H]", "Tokopedia [API]", "Dana [API]", "Traveloka [H2H]"];
+  const suppliers = ["[SMB]", "[VSI]", "[Kisel ApiHub]", "[Indotel]", "[Bima Sakti]"];
+  const products = ["DANAKH", "iPLN", "PLN", "S50", "I10", "TSEL50", "iBPJSTK"];
+  const rows = [...seed];
+
+  for (let i = seed.length; i < 130; i++) {
+    const id = 2455512 - (i - seed.length + 1);
+    const client = clients[i % clients.length];
+    const supplier = suppliers[i % suppliers.length];
+    const product = products[i % products.length];
+    const status = i % 17 === 0 ? "Pending" : i % 7 === 0 ? "Reversed" : "Success";
+    const minute = Math.max(0, 3 - Math.floor((i - seed.length) / 18));
+    const second = String(21 - (i % 22)).padStart(2, "0");
+    const isZeroProduct = product === "iPLN";
+    const amount = isZeroProduct ? 0 : (i % 9 + 1) * 10000 + 400;
+    rows.push({
+      id: String(id),
+      client,
+      supplier,
+      product,
+      dest: "08" + String(1200000000 + i * 73921).slice(0, 10),
+      time: `19:0${minute}:${second}`,
+      dur: (0.05 + (i % 13) * 0.037).toFixed(3),
+      price: formatMoney(amount),
+      margin: status === "Success" && i % 23 === 0 ? formatMoney(-((i % 5 + 1) * 250)) : formatMoney(isZeroProduct ? 0 : product === "S50" ? 40 : 300),
+      reason: status === "Pending" ? "Transaction is being processed" : status === "Reversed" ? (i % 2 ? "Bill already paid" : "Invalid destination number") : "Transaction successful",
+      status,
+    });
+  }
+
+  return rows;
+}
+
+RAW.splice(0, RAW.length, ...buildDemoTransactions());
+
+// Render traffic
 function renderTraffic() {
   const tbody = document.getElementById("traffic-tbody");
   tbody.innerHTML = TRAFFIC.map((t) => {
@@ -241,10 +344,11 @@ function updateSummaryStats() {
   const processing = Math.random() > 0.75 ? Math.floor(Math.random() * 4) + 1 : 0;
   const success = Math.max(0, total - reversed - pending - failed - processing);
   const successPct = total ? ((success / total) * 100).toFixed(1) : "0.0";
+  latestSuccessRate = `${successPct}%`;
 
   document.getElementById("s-total").textContent = total.toLocaleString("id");
   document.getElementById("s-success").textContent = success.toLocaleString("id");
-  document.getElementById("s-success-pct").textContent = `${successPct}%`;
+  document.getElementById("s-success-pct").textContent = latestSuccessRate;
   document.getElementById("s-pending").textContent = pending.toLocaleString("id");
   document.getElementById("s-rev").textContent = reversed.toLocaleString("id");
   document.getElementById("s-failed").textContent = failed.toLocaleString("id");
@@ -264,11 +368,11 @@ function updatePendingVisualState(pendingCount = LIVE_PENDING.size) {
   pendingCard.classList.toggle("is-live-pending", pendingCount > 0);
 }
 
-// ── RENDER ALERT: CLIENT STOP ────────────────────────────
+// Render alert: client stop
 function renderAlertStop() {
   const tbody = document.getElementById("alert-stop-tbody");
   if (!ALERTS_STOP.length) {
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text3); padding:20px 0; font-size:12px;">Tidak ada client stop terdeteksi</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text3); padding:20px 0; font-size:12px;">No client stop detected</td></tr>`;
     return;
   }
   tbody.innerHTML = ALERTS_STOP.map(
@@ -286,11 +390,11 @@ function renderAlertStop() {
   ).join("");
 }
 
-// ── RENDER ALERT: PRODUCT GANGGUAN ──────────────────────
+// Render alert: product incidents
 function renderAlertProduct() {
   const tbody = document.getElementById("alert-product-tbody");
   if (!ALERTS_PRODUCT.length) {
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text3); padding:20px 0; font-size:12px;">Tidak ada gangguan produk terdeteksi</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text3); padding:20px 0; font-size:12px;">No product incident detected</td></tr>`;
     return;
   }
   tbody.innerHTML = ALERTS_PRODUCT.map((a) => {
@@ -314,11 +418,11 @@ function renderAlertProduct() {
   }).join("");
 }
 
-// ── RENDER ALERT: TRANSAKSI RUGI ─────────────────────────
+// Render alert: loss transactions
 function renderAlertRugi() {
   const tbody = document.getElementById("alert-rugi-tbody");
   if (!ALERTS_RUGI.length) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text3); padding:20px 0; font-size:12px;">Tidak ada transaksi rugi hari ini</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text3); padding:20px 0; font-size:12px;">No loss transaction today</td></tr>`;
     return;
   }
   tbody.innerHTML = ALERTS_RUGI.map(
@@ -348,7 +452,7 @@ function renderAlertBalance() {
   const lowBalances = getLowBalanceAlerts();
 
   if (!lowBalances.length) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text3); padding:20px 0; font-size:12px;">Tidak ada saldo rendah terdeteksi</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text3); padding:20px 0; font-size:12px;">No low balance detected</td></tr>`;
     return;
   }
 
@@ -365,7 +469,7 @@ function renderAlertBalance() {
       <td><span class="client-tag">${a.type}</span></td>
       <td><span class="balance-val ${cls}">${formatRupiah(a.balance)}</span></td>
       <td>
-        <span class="balance-val ${cls}">${formatRupiah(a.balance)}</span>
+        <span class="mono-sm" style="color:var(--text3);">${formatRupiah(a.threshold)}</span>
         <div class="balance-meter" title="Threshold ${formatRupiah(a.threshold)}"><div class="balance-meter-fill ${cls}" style="width:${Math.max(4, Math.min(100, a.pct))}%;"></div></div>
       </td>
     </tr>`;
@@ -385,7 +489,7 @@ function updateAlertBadges() {
   const criticalCount = ALERTS_PRODUCT.filter((a) => a.level === "critical").length + ALERTS_STOP.length + balanceAlerts.filter((a) => a.level === "critical").length;
   const warnCount = ALERTS_PRODUCT.filter((a) => a.level === "warn").length + ALERTS_RUGI.length + balanceAlerts.filter((a) => a.level === "warn").length;
   const headerBadges = document.querySelectorAll(".alert-count-badge");
-  if (headerBadges[0]) headerBadges[0].textContent = `${criticalCount} kritis`;
+  if (headerBadges[0]) headerBadges[0].textContent = `${criticalCount} critical`;
   if (headerBadges[1]) headerBadges[1].textContent = `${warnCount} warn`;
   const balanceCount = document.getElementById("balance-count");
   if (balanceCount) {
@@ -474,14 +578,14 @@ function updateClientStopAlerts() {
       upsertClientStopAlert({
         client: `${row.client} [H2H]`,
         product: "-",
-        detail: `Tidak ada traffic baru ${idleMinutes} menit, normalnya ${row.normal30mTraffic} trx / 30 menit`,
+        detail: `No new traffic for ${idleMinutes} minutes, normally ${row.normal30mTraffic} trx / 30 minutes`,
         since: shortTime(new Date(row.lastTrafficAt)),
       });
     }
   });
 }
 
-// ── SWITCH ALERT TAB ─────────────────────────────────────
+// Switch alert tab
 function switchAlertTab(tab, btn) {
   // deactivate all tabs & panels
   document
@@ -498,23 +602,26 @@ function switchAlertTab(tab, btn) {
   panel.style.display = "flex";
 }
 
-// ── RENDER TRANSACTION TABLE ─────────────────────────────
+// Render transaction table
 function renderTrx() {
   const tbody = document.getElementById("trx-tbody");
-  tbody.innerHTML = RAW.slice(0, 10)
+  const start = (currentPage - 1) * pageSize;
+  const rowsThisPage = Math.max(0, Math.min(pageSize, TOTAL_TRANSACTION_COUNT - start));
+  const visibleRows = Array.from({ length: rowsThisPage }, (_, i) => RAW[(start + i) % RAW.length]);
+  tbody.innerHTML = visibleRows
     .map((r, i) => {
       const stcls = r.status.toLowerCase();
       const clientShort = r.client.split(" ")[0];
       const marginClass = parseSignedMoney(r.margin) < 0 ? "loss" : "";
       const rowClass = stcls === "pending" ? "trx-row-pending" : "";
       return `<tr class="${rowClass}">
-      <td style="color:var(--text3);font-size:11px;">${i + 1}</td>
+      <td style="color:var(--text3);font-size:11px;">${start + i + 1}</td>
       <td><span class="trx-id">${r.id}</span></td>
       <td><span class="client-tag">${clientShort}</span></td>
       <td><span class="sup-badge">${r.supplier.replace("[", "").replace("]", "")}</span></td>
       <td><span class="mono-sm" style="color:var(--accent2);">${r.product}</span></td>
       <td><span class="mono-sm">${r.dest}</span></td>
-      <td><span class="mono-sm" style="color:var(--text3);">15-06 ${r.time}</span></td>
+      <td><span class="mono-sm" style="color:var(--text3);">15-05 ${r.time}</span></td>
       <td><span class="mono-sm" style="color:${parseFloat(r.dur) > 0.5 ? "var(--warn)" : "var(--text3)"};">${r.dur}s</span></td>
       <td><span class="price-text">${r.price}</span></td>
       <td><span class="margin-text ${marginClass}">${r.margin}</span></td>
@@ -525,27 +632,57 @@ function renderTrx() {
     .join("");
 }
 
-// ── PAGINATION ────────────────────────────────────────────
+// Pagination
 function renderPagination() {
   const wrap = document.getElementById("page-btns");
-  const pages = [1, 2, "...", 304, 305];
+  const totalPages = Math.ceil(TOTAL_TRANSACTION_COUNT / pageSize);
+  const end = Math.min(currentPage * pageSize, TOTAL_TRANSACTION_COUNT);
+  const start = (currentPage - 1) * pageSize + 1;
+  const pageInfo = document.getElementById("trx-page-info");
+  const cardSummary = document.getElementById("trx-card-summary");
+  const pageSizeSelect = document.getElementById("page-size");
+  if (pageInfo) pageInfo.innerHTML = `Showing <b>${start.toLocaleString("id")}-${end.toLocaleString("id")}</b> of <b>${TOTAL_TRANSACTION_COUNT.toLocaleString("id")}</b> transactions`;
+  if (cardSummary) cardSummary.innerHTML = `${TOTAL_TRANSACTION_COUNT.toLocaleString("id")} rows - Page <b style="color:var(--text2);">${currentPage}</b> of ${totalPages.toLocaleString("id")}`;
+  if (pageSizeSelect) pageSizeSelect.value = String(pageSize);
+
+  const pages = getPaginationPages(totalPages, currentPage);
   wrap.innerHTML = pages
     .map((p) => {
       if (p === "...")
-        return `<div class="page-btn" style="cursor:default;border-color:transparent;color:var(--text3);">…</div>`;
-      return `<div class="page-btn ${p === 1 ? "active" : ""}" onclick="goPage(${p})">${p}</div>`;
+        return `<div class="page-btn" style="cursor:default;border-color:transparent;color:var(--text3);">...</div>`;
+      return `<div class="page-btn ${p === currentPage ? "active" : ""}" onclick="goPage(${p})">${p}</div>`;
     })
     .join("");
 }
 
-function goPage(n) {
-  document
-    .querySelectorAll(".page-btn")
-    .forEach((b) => b.classList.remove("active"));
-  event.target.classList.add("active");
+function getPaginationPages(totalPages, activePage) {
+  const pages = [1];
+  const start = Math.max(2, activePage - 1);
+  const end = Math.min(totalPages - 1, activePage + 1);
+
+  if (start > 2) pages.push("...");
+  for (let page = start; page <= end; page++) pages.push(page);
+  if (end < totalPages - 1) pages.push("...");
+  if (totalPages > 1) pages.push(totalPages);
+
+  return pages;
 }
 
-// ── CHARTS ───────────────────────────────────────────────
+function goPage(n) {
+  const totalPages = Math.ceil(TOTAL_TRANSACTION_COUNT / pageSize);
+  currentPage = Math.max(1, Math.min(n, totalPages));
+  renderTrx();
+  renderPagination();
+}
+
+function setPageSize(size) {
+  pageSize = parseInt(size, 10) || 10;
+  currentPage = 1;
+  renderTrx();
+  renderPagination();
+}
+
+// Charts
 let chartHourly, chartDonut;
 
 function getChartColors() {
@@ -556,6 +693,29 @@ function getChartColors() {
     tooltip: dark ? "#13161e" : "#ffffff",
   };
 }
+
+const donutCenterTextPlugin = {
+  id: "donutCenterText",
+  afterDraw(chart) {
+    if (chart.config.type !== "doughnut") return;
+    const { ctx, chartArea } = chart;
+    if (!chartArea) return;
+    const centerX = (chartArea.left + chartArea.right) / 2;
+    const centerY = (chartArea.top + chartArea.bottom) / 2;
+    const styles = getComputedStyle(document.documentElement);
+
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = styles.getPropertyValue("--success").trim();
+    ctx.font = "700 22px 'Space Mono', monospace";
+    ctx.fillText(latestSuccessRate, centerX, centerY - 6);
+    ctx.fillStyle = styles.getPropertyValue("--text3").trim();
+    ctx.font = "600 10px 'DM Sans', sans-serif";
+    ctx.fillText("Success Rate", centerX, centerY + 16);
+    ctx.restore();
+  },
+};
 
 function initCharts() {
   const c = getChartColors();
@@ -578,7 +738,7 @@ function initCharts() {
       ],
       datasets: [
         {
-          label: "Hari Ini",
+          label: "Today",
           data: [420, 510, 780, 690, 980, 1200, 1100, 1350],
           borderColor: "#4f8cff",
           backgroundColor: "rgba(79,140,255,0.08)",
@@ -589,7 +749,7 @@ function initCharts() {
           pointHoverRadius: 5,
         },
         {
-          label: "Kemarin",
+          label: "Yesterday",
           data: [380, 450, 600, 880, 740, 990, 1050, 970],
           borderColor: "#555e78",
           borderDash: [4, 3],
@@ -632,14 +792,19 @@ function initCharts() {
       datasets: [
         {
           data: [6755, 858, 2, 0],
-          backgroundColor: ["#22c55e", "#f97316", "#3b82f6", "#ef4444"],
+          backgroundColor: ["#22c55e", "#f97316", "#f59e0b", "#ef4444"],
         },
       ],
     },
     options: {
       cutout: "72%",
-      plugins: { legend: { display: false } },
+      layout: { padding: 8 },
+      plugins: {
+        legend: { display: false },
+        tooltip: { backgroundColor: c.tooltip },
+      },
     },
+    plugins: [donutCenterTextPlugin],
   });
 }
 
@@ -672,7 +837,7 @@ function toggleTheme() {
 
 function refreshData() {
   const btn = document.querySelector(".btn-ghost");
-  btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 0.7s linear infinite;"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg> Refreshing…`;
+  btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 0.7s linear infinite;"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg> Refreshing...`;
   setTimeout(() => {
     btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg> Refresh`;
   }, 1200);
@@ -697,10 +862,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }, 60 * 1000);
 });
 
-// ── 🚀 LIVE TRAFFIC SIMULATOR (REAL-TIME EFFECT) ─────────
-let lastTrxId = 2445900;
+// Live traffic simulator
+let lastTrxId = 2455541;
 
-// helper format
+// Formatting helpers
 function rand(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
@@ -750,7 +915,7 @@ function detectProductIncident(trx) {
     return {
       level,
       product: `${trx.product} / ${trx.supplier}`,
-      desc: `RC ${rc} melewati threshold filter IT`,
+      desc: `RC ${rc} exceeded IT threshold filter`,
     };
   }
 
@@ -764,6 +929,13 @@ function buildFakeTransaction(statusOverride) {
     "Bukalapak [API]",
     "Telin [H2H]",
     "correct [API]",
+    "ShopeePay [H2H]",
+    "Tokopedia [API]",
+    "Dana [API]",
+    "Blibli [H2H]",
+    "Traveloka [H2H]",
+    "MitraPay [API]",
+    "Fastpay [H2H]",
   ];
 
   const suppliers = [
@@ -786,16 +958,16 @@ function buildFakeTransaction(statusOverride) {
   const now = new Date();
 
   let dur = (Math.random() * 0.5).toFixed(3);
-  let reason = "Transaksi berhasil";
+  let reason = "Transaction successful";
 
   if (status === "Reversed") {
     dur = (Math.random() * 2 + 1).toFixed(3);
-    reason = "Timeout dari supplier";
+    reason = "Supplier timeout";
   }
 
   if (status === "Pending") {
     dur = "0.000";
-    reason = "Menunggu balasan";
+    reason = "Waiting for supplier response";
   }
 
   lastTrxId++;
@@ -918,14 +1090,14 @@ function resolvePendingTransaction(id) {
     const resolvedAsReversed = Math.random() > 0.82;
     trx.status = resolvedAsReversed ? "Reversed" : "Success";
     trx.dur = resolvedAsReversed ? (Math.random() * 2 + 1).toFixed(3) : (Math.random() * 0.45 + 0.08).toFixed(3);
-    trx.reason = resolvedAsReversed ? "Timeout dari supplier" : "Transaksi berhasil";
+    trx.reason = resolvedAsReversed ? "Supplier timeout" : "Transaction successful";
   }
 
   renderTrx();
   updateSummaryStats();
 }
 
-// ── 🚀 LIVE TRAFFIC SIMULATOR (FIXED REAL MOVEMENT) ─────────
+// Live traffic simulator timing
 function simulateLiveTraffic() {
   function pushIncomingTraffic() {
     if (document.hidden) {
