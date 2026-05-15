@@ -188,31 +188,38 @@ const ALERTS_RUGI = [
 
 // ── RENDER TRAFFIC ───────────────────────────────────────
 function renderTraffic() {
-  const max = Math.max(...TRAFFIC.map((t) => Math.max(t.today, t.yesterday)));
   const tbody = document.getElementById("traffic-tbody");
   tbody.innerHTML = TRAFFIC.map((t) => {
     const diff = t.today - t.yesterday;
-    const pct = ((diff / t.yesterday) * 100).toFixed(1);
+    const pctValue = t.yesterday ? (diff / t.yesterday) * 100 : 0;
+    const pct = pctValue.toFixed(1);
     const dir = diff > 0 ? "up" : diff < 0 ? "down" : "flat";
     const sign = diff > 0 ? "+" : "";
     const tickDir = t.lastTick > 0 ? "hot" : t.lastTick < 0 ? "drop" : "";
-    const tickSign = t.lastTick > 0 ? "+" : "";
+    const liveBadge =
+      diff < 0
+        ? `<span class="traffic-tick drop">${diff.toLocaleString("id")}</span>`
+        : tickDir
+          ? `<span class="traffic-tick ${tickDir}">${t.lastTick > 0 ? "+" : ""}${t.lastTick.toLocaleString("id")}</span>`
+          : "";
     const barColor =
       dir === "up"
         ? "var(--success)"
         : dir === "down"
           ? "var(--danger)"
           : "var(--text3)";
-    const barW = Math.round((t.today / max) * 100);
+    const ratio = t.yesterday ? t.today / t.yesterday : 1;
+    const barW = Math.max(4, Math.min(100, Math.round(ratio * 100)));
+    const barTitle = `${t.today.toLocaleString("id")} / ${t.yesterday.toLocaleString("id")} (${sign}${pct}%)`;
     return `<tr class="${tickDir ? "traffic-pulse" : ""}">
       <td><span class="traffic-client"><span class="live-dot ${tickDir}"></span>${t.client}</span></td>
       <td>
         <span class="mono-sm">${t.today.toLocaleString("id")}</span>
-        ${tickDir ? `<span class="traffic-tick ${tickDir}">${tickSign}${t.lastTick}</span>` : ""}
+        ${liveBadge}
       </td>
       <td><span class="mono-sm" style="color:var(--text3);">${t.yesterday.toLocaleString("id")}</span></td>
       <td><span class="delta ${dir}">${sign}${pct}%</span></td>
-      <td><div class="mini-bar"><div class="mini-bar-fill" style="width:${barW}%;background:${barColor};"></div></div></td>
+      <td><div class="mini-bar" title="${barTitle}"><div class="mini-bar-fill" style="width:${barW}%;background:${barColor};"></div></div></td>
     </tr>`;
   }).join("");
 
@@ -757,7 +764,6 @@ function ingestTransaction(newTrx) {
 
   TRAFFIC.forEach((row) => {
     if (row !== t && Math.random() > 0.72) row.today += Math.floor(Math.random() * 4);
-    if (Math.random() > 0.86) row.yesterday += Math.floor(Math.random() * 3);
   });
 
   renderTraffic();
