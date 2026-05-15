@@ -232,7 +232,7 @@ select.filter-input { cursor: pointer; }
 
 /* Charts */
 .chart-body {
-  height: 200px;
+  height: 228px;
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
@@ -242,7 +242,7 @@ select.filter-input { cursor: pointer; }
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  height: 200px;
+  height: 228px;
   padding: 16px;
 }
 
@@ -281,10 +281,33 @@ tbody tr:hover td { background: var(--bg3); }
   min-height: 0;
   -webkit-overflow-scrolling: touch;
 }
-.trx-card { flex: 1 1 auto; }
-.trx-scroll { flex: 1 1 auto; max-height: none; overflow: auto; }
+.trx-card { flex: 0 0 auto; }
+.trx-scroll {
+  flex: 0 0 auto;
+  max-height: 518px;
+  overflow: auto;
+}
 .traffic-scroll { max-height: 228px; }
-.balance-scroll { max-height: 150px; }
+.grid-right .balance-card {
+  flex: 0 0 auto;
+  min-height: 0;
+}
+.grid-right .alert-monitor-card {
+  flex: 0 0 358px;
+  max-height: 358px;
+  min-height: 0;
+}
+.balance-scroll {
+  flex: 0 0 auto;
+  max-height: 198px;
+  overflow: auto;
+}
+.alert-monitor-card .alert-panel {
+  flex: 1 1 auto;
+  max-height: none;
+  min-height: 0;
+  overflow: auto;
+}
 .alert-scroll {
   max-height: 250px;
   min-height: 0;
@@ -297,10 +320,15 @@ tbody tr:hover td { background: var(--bg3); }
 .traffic-table,
 .alert-table { min-width: 560px; }
 .balance-table { min-width: 620px; }
-.trx-table th { padding-top: 13px; padding-bottom: 13px; }
+.trx-table th {
+  height: 38px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
 .trx-table td {
-  padding-top: clamp(13px, 1.1vh, 22px);
-  padding-bottom: clamp(13px, 1.1vh, 22px);
+  height: 48px;
+  padding-top: 0;
+  padding-bottom: 0;
   font-size: 12.5px;
 }
 .trx-table .mono-sm,
@@ -836,159 +864,4 @@ tbody tr:hover td { background: var(--bg3); }
 @keyframes pendingPillBlink {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.06); }
-}
-
-/* TV / desktop space balancing tweak */
-@media (min-width: 901px) {
-  /* Biar Transaction List lebih penuh di layar TV tanpa keliatan kegedean */
-  .trx-table th {
-    padding-top: clamp(14px, 1.25vh, 18px);
-    padding-bottom: clamp(14px, 1.25vh, 18px);
-    font-size: clamp(10.5px, 0.68vw, 12px);
-    font-weight: 800;
-  }
-
-  .trx-table td {
-    padding-top: clamp(15px, 1.45vh, 23px);
-    padding-bottom: clamp(15px, 1.45vh, 23px);
-    font-size: clamp(13px, 0.78vw, 14.5px);
-    font-weight: 650;
-  }
-
-  .trx-table .mono-sm,
-  .trx-table .price-text,
-  .trx-table .margin-text,
-  .trx-table .trx-id {
-    font-size: clamp(12.5px, 0.74vw, 14px);
-    font-weight: 700;
-  }
-
-  .trx-table .client-tag,
-  .trx-table .sup-badge,
-  .trx-table .status-pill {
-    font-size: clamp(11.5px, 0.7vw, 13px);
-    font-weight: 800;
-  }
-
-  .trx-table .status-pill {
-    padding: 4px 11px;
-  }
-
-  .trx-table .client-tag,
-  .trx-table .sup-badge {
-    padding-top: 3px;
-    padding-bottom: 3px;
-  }
-
-  /* Kanan: Balance Monitor dan Alert Monitor dibagi rata agar bawahnya nggak kosong */
-  .grid-right {
-    height: 100%;
-  }
-
-  .grid-right .balance-card,
-  .grid-right .balance-card + .card {
-    flex: 1 1 0;
-    min-height: 0;
-  }
-
-  .grid-right .balance-card {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .balance-scroll,
-  .alert-scroll {
-    flex: 1 1 auto;
-    max-height: none;
-    min-height: 0;
-    overflow: auto;
-  }
-
-  .balance-table th,
-  .balance-table td,
-  .alert-table th,
-  .alert-table td {
-    padding-top: clamp(9px, 0.85vh, 14px);
-    padding-bottom: clamp(9px, 0.85vh, 14px);
-  }
-
-  .alert-panel {
-    flex: 1 1 auto;
-    min-height: 0;
-  }
-}
-
-@media (min-width: 1500px) {
-  .trx-table td {
-    padding-top: clamp(18px, 1.65vh, 25px);
-    padding-bottom: clamp(18px, 1.65vh, 25px);
-  }
-
-  .trx-table th {
-    padding-top: 16px;
-    padding-bottom: 16px;
-  }
-}
-
-/* FIX: Transaction table tetap fixed height, row banyak tinggal scroll */
-.trx-card {
-  height: clamp(430px, 46vh, 620px);
-  max-height: clamp(430px, 46vh, 620px);
-  overflow: hidden;
-}
-
-.trx-scroll {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: auto;
-}
-
-.trx-table {
-  height: auto;
-}
-
-/* Biar kanan juga tetap rapi */
-.grid-right {
-  height: 100%;
-  min-height: 0;
-}
-
-.balance-scroll {
-  max-height: 260px;
-  overflow-y: auto;
-}
-
-.alert-scroll {
-  flex: 1 1 auto;
-  max-height: none;
-  overflow-y: auto;
-}
-
-/* FIX TV: default tetap tampil 10 rows, kalau pilih 25/50/100 scroll di dalam table */
-/* FIX: Transaction list normal, tidak ikut membesar */
-.trx-card {
-  flex: 0 0 auto !important;
-  height: auto !important;
-  max-height: none !important;
-}
-
-.trx-scroll {
-  flex: 0 0 auto !important;
-  max-height: 620px !important;
-  overflow-y: auto !important;
-  overflow-x: auto !important;
-}
-
-.trx-table td {
-  height: auto !important;
-  padding-top: 13px !important;
-  padding-bottom: 13px !important;
-}
-
-/* Kalau pilih rows banyak, baru scroll */
-.trx-card:has(#page-size option[value="100"]:checked) .trx-scroll,
-.trx-card:has(#page-size option[value="50"]:checked) .trx-scroll,
-.trx-card:has(#page-size option[value="25"]:checked) .trx-scroll {
-  max-height: 620px !important;
 }
