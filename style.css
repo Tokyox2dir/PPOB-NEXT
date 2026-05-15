@@ -577,16 +577,37 @@ tbody tr:hover td { background: var(--bg3); }
   }
   .donut-body {
     height: auto;
-    min-height: 210px;
+    min-height: 248px;
     flex-direction: column;
-    align-items: stretch;
+    align-items: center;
+    gap: 10px;
+    overflow: visible;
   }
   .donut-wrap {
+    flex: none;
+    width: 150px;
+    height: 150px;
+    min-width: 150px;
     min-height: 150px;
   }
   .donut-legend {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 12px;
     min-width: 0;
     width: 100%;
+    flex-shrink: 0;
+  }
+  .legend-item {
+    min-width: 0;
+  }
+  .legend-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .legend-val {
+    flex-shrink: 0;
   }
   .card {
     border-radius: 10px;
@@ -664,6 +685,19 @@ tbody tr:hover td { background: var(--bg3); }
   }
   .chart-body {
     height: 220px;
+  }
+  .chart-card-donut .chart-body {
+    height: auto;
+    min-height: 282px;
+  }
+  .donut-wrap {
+    width: 138px;
+    height: 138px;
+    min-width: 138px;
+    min-height: 138px;
+  }
+  .donut-legend {
+    grid-template-columns: 1fr;
   }
   .badge-live {
     padding: 4px 8px;
