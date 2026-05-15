@@ -256,10 +256,10 @@ select.filter-input { cursor: pointer; }
 }
 
 .donut-wrap {
-  flex: 0 0 154px;
-  width: 154px;
-  height: 154px;
-  max-width: 154px;
+  flex: 0 0 200px;
+  width: 200px;
+  height: 200px;
+  max-width: 200px;
 }
 
 /* Tables */

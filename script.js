@@ -1041,7 +1041,7 @@ function initCharts() {
     },
     options: {
       cutout: "72%",
-      layout: { padding: 8 },
+      layout: { padding: 6 },
       plugins: {
         legend: { display: false },
         tooltip: { backgroundColor: c.tooltip },
