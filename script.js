@@ -151,6 +151,7 @@ const TRAFFIC = [
 
 const CLIENT_STOP_NORMAL_MIN = 15;
 const CLIENT_STOP_IDLE_MS = 30 * 60 * 1000;
+const LIVE_PENDING = new Map();
 
 // ── ALERT: CLIENT STOP ───────────────────────────────────
 const ALERTS_STOP = [
@@ -219,7 +220,7 @@ function renderTraffic() {
 function updateSummaryStats() {
   const total = TRAFFIC.reduce((sum, t) => sum + t.today, 0);
   const reversed = Math.max(0, Math.round(total * 0.112 + Math.random() * 8));
-  const pending = Math.max(1, Math.round(total * 0.0004));
+  const pending = LIVE_PENDING.size;
   const failed = Math.random() > 0.85 ? 1 : 0;
   const processing = Math.random() > 0.75 ? Math.floor(Math.random() * 4) + 1 : 0;
   const success = Math.max(0, total - reversed - pending - failed - processing);
@@ -232,11 +233,19 @@ function updateSummaryStats() {
   document.getElementById("s-rev").textContent = reversed.toLocaleString("id");
   document.getElementById("s-failed").textContent = failed.toLocaleString("id");
   document.getElementById("s-proc").textContent = processing.toLocaleString("id");
+  updatePendingVisualState(pending);
 
   if (chartDonut) {
     chartDonut.data.datasets[0].data = [success, reversed, pending, failed];
     chartDonut.update("none");
   }
+}
+
+function updatePendingVisualState(pendingCount = LIVE_PENDING.size) {
+  const pendingCard = document.querySelector(".stat-card.pending");
+  if (!pendingCard) return;
+
+  pendingCard.classList.toggle("is-live-pending", pendingCount > 0);
 }
 
 // ── RENDER ALERT: CLIENT STOP ────────────────────────────
@@ -415,7 +424,8 @@ function renderTrx() {
       const stcls = r.status.toLowerCase();
       const clientShort = r.client.split(" ")[0];
       const marginClass = parseSignedMoney(r.margin) < 0 ? "loss" : "";
-      return `<tr>
+      const rowClass = stcls === "pending" ? "trx-row-pending" : "";
+      return `<tr class="${rowClass}">
       <td style="color:var(--text3);font-size:11px;">${i + 1}</td>
       <td><span class="trx-id">${r.id}</span></td>
       <td><span class="client-tag">${clientShort}</span></td>
@@ -596,6 +606,7 @@ document.addEventListener("DOMContentLoaded", () => {
   renderAllAlerts();
   renderPagination();
   initCharts();
+  updateSummaryStats();
   simulateLiveTraffic();
   setInterval(() => {
     updateClientStopAlerts();
@@ -659,6 +670,33 @@ function detectProductIncident(trx) {
   return null;
 }
 
+function trackPendingTransaction(trx) {
+  if (trx.status !== "Pending") return;
+
+  LIVE_PENDING.set(trx.id, trx);
+
+  const resolveDelay = Math.floor(Math.random() * 17000) + 8000; // 8s - 25s
+  setTimeout(() => resolvePendingTransaction(trx.id), resolveDelay);
+}
+
+function resolvePendingTransaction(id) {
+  const pendingTrx = LIVE_PENDING.get(id);
+  if (!pendingTrx) return;
+
+  const trx = RAW.find((row) => row.id === id);
+  LIVE_PENDING.delete(id);
+
+  if (trx) {
+    const resolvedAsReversed = Math.random() > 0.82;
+    trx.status = resolvedAsReversed ? "Reversed" : "Success";
+    trx.dur = resolvedAsReversed ? (Math.random() * 2 + 1).toFixed(3) : (Math.random() * 0.45 + 0.08).toFixed(3);
+    trx.reason = resolvedAsReversed ? "Timeout dari supplier" : "Transaksi berhasil";
+  }
+
+  renderTrx();
+  updateSummaryStats();
+}
+
 // ── 🚀 LIVE TRAFFIC SIMULATOR (FIXED REAL MOVEMENT) ─────────
 function simulateLiveTraffic() {
   const clients = [
@@ -678,7 +716,7 @@ function simulateLiveTraffic() {
   ];
 
   const products = ["iPLN", "DANAKH", "TSEL50", "I10", "S25", "iBPJSTK"];
-  const statuses = ["Success", "Success", "Success", "Reversed", "Pending"];
+  const statuses = ["Success", "Success", "Success", "Success", "Success", "Reversed", "Pending"];
 
   function pushIncomingTraffic() {
     if (document.hidden) {
@@ -734,6 +772,7 @@ function simulateLiveTraffic() {
     // =========================
     RAW.unshift(newTrx);
     RAW.pop();
+    trackPendingTransaction(newTrx);
     renderTrx();
 
     // =========================
