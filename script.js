@@ -197,11 +197,9 @@ function renderTraffic() {
     const sign = diff > 0 ? "+" : "";
     const tickDir = t.lastTick > 0 ? "hot" : t.lastTick < 0 ? "drop" : "";
     const liveBadge =
-      diff < 0
-        ? `<span class="traffic-tick drop">${diff.toLocaleString("id")}</span>`
-        : tickDir
-          ? `<span class="traffic-tick ${tickDir}">${t.lastTick > 0 ? "+" : ""}${t.lastTick.toLocaleString("id")}</span>`
-          : "";
+      diff === 0
+        ? ""
+        : `<span class="traffic-tick ${diff > 0 ? "hot" : "drop"}">${sign}${diff.toLocaleString("id")}</span>`;
     const barColor =
       dir === "up"
         ? "var(--success)"
