@@ -129,7 +129,7 @@ select.filter-input { cursor: pointer; }
 
 /* ── STAT CARDS ─────────────────────────────── */
 .stats-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
-.stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--card-radius); padding: 14px 16px; position: relative; overflow: hidden; }
+.stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--card-radius); padding: 14px 16px; position: relative; overflow: hidden; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
 .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: var(--card-radius) var(--card-radius) 0 0; }
 .stat-card.total::before { background: var(--accent); }
 .stat-card.success::before { background: var(--success); }
@@ -138,24 +138,20 @@ select.filter-input { cursor: pointer; }
 .stat-card.failed::before { background: var(--danger); }
 .stat-card.processing::before { background: var(--text3); }
 .stat-card.pending.is-live-pending {
+  display: block;
+  visibility: visible;
+  opacity: 1;
+  transform: none;
   border-color: rgba(59,130,246,0.7);
   box-shadow: 0 0 0 1px rgba(59,130,246,0.25), 0 0 22px rgba(59,130,246,0.18);
-  animation: pendingCardBlink 1.05s ease-in-out infinite;
 }
-.stat-card.pending.is-live-pending::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(59,130,246,0.12), transparent);
-  transform: translateX(-100%);
-  animation: pendingScan 1.8s ease-in-out infinite;
-  pointer-events: none;
-}
+.stat-card > * { position: relative; z-index: 1; }
 .stat-label { font-size: 10.5px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; font-weight: 600; }
 .stat-value { font-family: var(--mono); font-size: 22px; font-weight: 700; color: var(--text); line-height: 1; margin-bottom: 5px; }
 .stat-value.total { color: var(--accent); }
 .stat-value.success { color: var(--success); }
 .stat-value.pending { color: var(--pending); }
+.stat-card.pending.is-live-pending .stat-value.pending { text-shadow: 0 0 12px rgba(59,130,246,0.65); }
 .stat-value.reversed { color: var(--rev); }
 .stat-value.failed { color: var(--danger); }
 .stat-pct { font-size: 11px; color: var(--text3); }
@@ -494,17 +490,6 @@ tbody tr:hover td { background: var(--bg3); }
 @keyframes flashGlow {
   0% { background: rgba(79,140,255,0.3); }
   100% { background: transparent; }
-}
-
-@keyframes pendingCardBlink {
-  0%, 100% { filter: brightness(1); }
-  50% { filter: brightness(1.22); }
-}
-
-@keyframes pendingScan {
-  0% { transform: translateX(-100%); opacity: 0; }
-  35% { opacity: 1; }
-  100% { transform: translateX(100%); opacity: 0; }
 }
 
 @keyframes pendingRowBlink {

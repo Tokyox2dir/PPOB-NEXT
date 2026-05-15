@@ -151,6 +151,8 @@ const TRAFFIC = [
 
 const CLIENT_STOP_NORMAL_MIN = 15;
 const CLIENT_STOP_IDLE_MS = 30 * 60 * 1000;
+const DEMO_PENDING_INTERVAL_MS = 5000;
+const DEMO_PENDING_RESOLVE_MS = 2000;
 const LIVE_PENDING = new Map();
 
 // ── ALERT: CLIENT STOP ───────────────────────────────────
@@ -608,6 +610,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initCharts();
   updateSummaryStats();
   simulateLiveTraffic();
+  startPendingDemoFeed();
   setInterval(() => {
     updateClientStopAlerts();
     renderAllAlerts();
@@ -670,13 +673,155 @@ function detectProductIncident(trx) {
   return null;
 }
 
+function buildFakeTransaction(statusOverride) {
+  const clients = [
+    "Hotelmurah [H2H]",
+    "bkpay [H2H]",
+    "Bukalapak [API]",
+    "Telin [H2H]",
+    "correct [API]",
+  ];
+
+  const suppliers = [
+    "[VSI]",
+    "[SMB]",
+    "[Indotel]",
+    "[Bima Sakti]",
+    "[Kisel ApiHub]",
+  ];
+
+  const products = ["iPLN", "DANAKH", "TSEL50", "I10", "S25", "iBPJSTK"];
+  const statuses = ["Success", "Success", "Success", "Success", "Success", "Reversed"];
+  const status = statusOverride || rand(statuses);
+  const product = rand(products);
+  const supplier = rand(suppliers);
+  const client = rand(clients);
+  const isBillProduct = product === "iPLN";
+  const isLoss = !isBillProduct && status === "Success" && Math.random() > 0.78;
+  const marginValue = isBillProduct ? 0 : isLoss ? -(Math.floor(Math.random() * 1600) + 250) : Math.floor(Math.random() * 5) * 100;
+  const now = new Date();
+
+  let dur = (Math.random() * 0.5).toFixed(3);
+  let reason = "Transaksi berhasil";
+
+  if (status === "Reversed") {
+    dur = (Math.random() * 2 + 1).toFixed(3);
+    reason = "Timeout dari supplier";
+  }
+
+  if (status === "Pending") {
+    dur = "0.000";
+    reason = "Menunggu balasan";
+  }
+
+  lastTrxId++;
+
+  return {
+    id: lastTrxId.toString(),
+    client,
+    supplier,
+    product,
+    dest: "08" + Math.floor(Math.random() * 10000000000),
+    time: now.toTimeString().split(" ")[0],
+    dur,
+    price: isBillProduct ? "Rp0" : "Rp" + (Math.floor(Math.random() * 900) + 10) + ".000",
+    margin: formatMoney(marginValue),
+    reason,
+    status,
+  };
+}
+
+function ingestTransaction(newTrx) {
+  RAW.unshift(newTrx);
+  RAW.pop();
+  trackPendingTransaction(newTrx);
+  renderTrx();
+
+  const clientName = newTrx.client.split(" ")[0];
+  const t = TRAFFIC.find((row) => row.client === clientName) || rand(TRAFFIC);
+  const burst = Math.floor(Math.random() * 24) + 7;
+  t.lastTrafficAt = Date.now();
+
+  if (newTrx.status === "Success") {
+    t.today += burst;
+    t.lastTick = burst;
+  } else if (newTrx.status === "Reversed") {
+    const drop = Math.floor(Math.random() * 8) + 3;
+    t.today = Math.max(0, t.today - drop);
+    t.lastTick = -drop;
+  } else {
+    const pendingBump = Math.floor(Math.random() * 5) + 1;
+    t.today += pendingBump;
+    t.lastTick = pendingBump;
+  }
+
+  TRAFFIC.forEach((row) => {
+    if (row !== t && Math.random() > 0.72) row.today += Math.floor(Math.random() * 4);
+    if (Math.random() > 0.86) row.yesterday += Math.floor(Math.random() * 3);
+  });
+
+  renderTraffic();
+  updateSummaryStats();
+  processAlertRules(newTrx, t);
+  updateHourlyChart(newTrx.status);
+}
+
+function updateHourlyChart(status) {
+  if (!chartHourly) return;
+
+  const now = new Date();
+  const label = now.toTimeString().slice(0, 8);
+  const successData = chartHourly.data.datasets[0].data;
+  const yesterdayData = chartHourly.data.datasets[1].data;
+  const lastToday = successData.at(-1);
+  const lastYesterday = yesterdayData.at(-1);
+  const wave = Math.sin(Date.now() / 2600) * 36;
+  const jitter = Math.floor(Math.random() * 95) - 38;
+  const statusImpact =
+    status === "Success" ? Math.floor(Math.random() * 70) + 28 :
+    status === "Reversed" ? -(Math.floor(Math.random() * 90) + 35) :
+    -(Math.floor(Math.random() * 34) + 8);
+  const newToday = Math.max(80, Math.round(lastToday + wave + jitter + statusImpact));
+  const yesterdayWave = Math.sin(Date.now() / 4200) * 14;
+  const yesterdayJitter = Math.floor(Math.random() * 31) - 15;
+  const newYesterday = Math.max(80, Math.round(lastYesterday + yesterdayWave + yesterdayJitter));
+
+  chartHourly.data.labels.push(label);
+  successData.push(newToday);
+  yesterdayData.push(newYesterday);
+
+  if (chartHourly.data.labels.length > 25) {
+    chartHourly.data.labels.shift();
+    successData.shift();
+    yesterdayData.shift();
+  }
+
+  chartHourly.update();
+}
+
+function startPendingDemoFeed() {
+  function schedulePendingWave() {
+    setTimeout(() => {
+      if (!document.hidden && LIVE_PENDING.size === 0) {
+        const pendingCount = Math.floor(Math.random() * 4) + 1;
+        for (let i = 0; i < pendingCount; i++) {
+          ingestTransaction(buildFakeTransaction("Pending"));
+        }
+      }
+
+      setTimeout(schedulePendingWave, DEMO_PENDING_RESOLVE_MS);
+    }, DEMO_PENDING_INTERVAL_MS);
+  }
+
+  schedulePendingWave();
+}
+
 function trackPendingTransaction(trx) {
   if (trx.status !== "Pending") return;
 
   LIVE_PENDING.set(trx.id, trx);
 
-  const resolveDelay = Math.floor(Math.random() * 17000) + 8000; // 8s - 25s
-  setTimeout(() => resolvePendingTransaction(trx.id), resolveDelay);
+  setTimeout(() => resolvePendingTransaction(trx.id), DEMO_PENDING_RESOLVE_MS);
 }
 
 function resolvePendingTransaction(id) {
@@ -699,151 +844,13 @@ function resolvePendingTransaction(id) {
 
 // ── 🚀 LIVE TRAFFIC SIMULATOR (FIXED REAL MOVEMENT) ─────────
 function simulateLiveTraffic() {
-  const clients = [
-    "Hotelmurah [H2H]",
-    "bkpay [H2H]",
-    "Bukalapak [API]",
-    "Telin [H2H]",
-    "correct [API]",
-  ];
-
-  const suppliers = [
-    "[VSI]",
-    "[SMB]",
-    "[Indotel]",
-    "[Bima Sakti]",
-    "[Kisel ApiHub]",
-  ];
-
-  const products = ["iPLN", "DANAKH", "TSEL50", "I10", "S25", "iBPJSTK"];
-  const statuses = ["Success", "Success", "Success", "Success", "Success", "Reversed", "Pending"];
-
   function pushIncomingTraffic() {
     if (document.hidden) {
       scheduleNextTraffic();
       return;
     }
 
-    lastTrxId++;
-
-    const status = rand(statuses);
-    const product = rand(products);
-
-    const now = new Date();
-    const timeStr = now.toTimeString().split(" ")[0];
-
-    let dur = (Math.random() * 0.5).toFixed(3);
-    let reason = "Transaksi berhasil";
-
-    if (status === "Reversed") {
-      dur = (Math.random() * 2 + 1).toFixed(3);
-      reason = "Timeout dari supplier";
-    }
-
-    if (status === "Pending") {
-      dur = "0.000";
-      reason = "Menunggu balasan";
-    }
-
-    const client = rand(clients);
-    const supplier = rand(suppliers);
-    const isBillProduct = product === "iPLN";
-    const isLoss = !isBillProduct && status === "Success" && Math.random() > 0.78;
-    const marginValue = isBillProduct ? 0 : isLoss ? -(Math.floor(Math.random() * 1600) + 250) : Math.floor(Math.random() * 5) * 100;
-    const newTrx = {
-      id: lastTrxId.toString(),
-      client,
-      supplier,
-      product,
-      dest: "08" + Math.floor(Math.random() * 10000000000),
-      time: timeStr,
-      dur,
-      price:
-        isBillProduct
-          ? "Rp0"
-          : "Rp" + (Math.floor(Math.random() * 900) + 10) + ".000",
-      margin: formatMoney(marginValue),
-      reason,
-      status,
-    };
-
-    // =========================
-    // 1. UPDATE TABLE DATA
-    // =========================
-    RAW.unshift(newTrx);
-    RAW.pop();
-    trackPendingTransaction(newTrx);
-    renderTrx();
-
-    // =========================
-    // 2. TRAFFIC UPDATE
-    // =========================
-    const clientName = client.split(" ")[0];
-    const t = TRAFFIC.find((row) => row.client === clientName) || rand(TRAFFIC);
-    const burst = Math.floor(Math.random() * 24) + 7;
-    t.lastTrafficAt = Date.now();
-
-    if (status === "Success") {
-      t.today += burst;
-      t.lastTick = burst;
-    } else if (status === "Reversed") {
-      const drop = Math.floor(Math.random() * 8) + 3;
-      t.today = Math.max(0, t.today - drop);
-      t.lastTick = -drop;
-    } else {
-      const pendingBump = Math.floor(Math.random() * 5) + 1;
-      t.today += pendingBump;
-      t.lastTick = pendingBump;
-    }
-
-    TRAFFIC.forEach((row) => {
-      if (row !== t && Math.random() > 0.72) row.today += Math.floor(Math.random() * 4);
-      if (Math.random() > 0.86) row.yesterday += Math.floor(Math.random() * 3);
-    });
-
-    renderTraffic();
-    updateSummaryStats();
-    processAlertRules(newTrx, t);
-
-    // =========================
-    // 3. CHART FIX (REAL MOVEMENT)
-    // =========================
-    if (chartHourly) {
-      const now = new Date();
-      const label = now.toTimeString().slice(0, 8);
-
-      const successData = chartHourly.data.datasets[0].data;
-      const yesterdayData = chartHourly.data.datasets[1].data;
-
-      const lastToday = successData.at(-1);
-      const lastYesterday = yesterdayData.at(-1);
-
-      const wave = Math.sin(Date.now() / 2600) * 36;
-      const jitter = Math.floor(Math.random() * 95) - 38;
-      const statusImpact =
-        status === "Success" ? Math.floor(Math.random() * 70) + 28 :
-        status === "Reversed" ? -(Math.floor(Math.random() * 90) + 35) :
-        -(Math.floor(Math.random() * 34) + 8);
-
-      const newToday = Math.max(80, Math.round(lastToday + wave + jitter + statusImpact));
-
-      const yesterdayWave = Math.sin(Date.now() / 4200) * 14;
-      const yesterdayJitter = Math.floor(Math.random() * 31) - 15;
-      const newYesterday = Math.max(80, Math.round(lastYesterday + yesterdayWave + yesterdayJitter));
-
-      chartHourly.data.labels.push(label);
-      successData.push(newToday);
-      yesterdayData.push(newYesterday);
-
-      // keep window clean
-      if (chartHourly.data.labels.length > 25) {
-        chartHourly.data.labels.shift();
-        successData.shift();
-        yesterdayData.shift();
-      }
-
-      chartHourly.update();
-    }
+    ingestTransaction(buildFakeTransaction());
     scheduleNextTraffic();
   }
 
