@@ -951,10 +951,10 @@ const donutCenterTextPlugin = {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillStyle = styles.getPropertyValue("--success").trim();
-    ctx.font = "700 22px 'Space Mono', monospace";
+    ctx.font = "800 22px 'Space Mono', monospace";
     ctx.fillText(latestSuccessRate, centerX, centerY - 6);
-    ctx.fillStyle = styles.getPropertyValue("--text3").trim();
-    ctx.font = "600 10px 'DM Sans', sans-serif";
+    ctx.fillStyle = styles.getPropertyValue("--text2").trim();
+    ctx.font = "800 10px 'DM Sans', sans-serif";
     ctx.fillText("Success Rate", centerX, centerY + 16);
     ctx.restore();
   },
