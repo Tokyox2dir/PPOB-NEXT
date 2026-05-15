@@ -142,8 +142,10 @@ select.filter-input { cursor: pointer; }
   visibility: visible;
   opacity: 1;
   transform: none;
-  border-color: rgba(59,130,246,0.7);
-  box-shadow: 0 0 0 1px rgba(59,130,246,0.25), 0 0 22px rgba(59,130,246,0.18);
+  background: linear-gradient(135deg, rgba(59,130,246,0.2), var(--bg2) 58%);
+  border-color: rgba(96,165,250,1);
+  box-shadow: 0 0 0 1px rgba(96,165,250,0.75), 0 0 22px rgba(59,130,246,0.55), inset 0 0 22px rgba(59,130,246,0.12);
+  animation: pendingCardAlert 0.9s ease-in-out infinite;
 }
 .stat-card > * { position: relative; z-index: 1; }
 .stat-label { font-size: 10.5px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; font-weight: 600; }
@@ -151,7 +153,10 @@ select.filter-input { cursor: pointer; }
 .stat-value.total { color: var(--accent); }
 .stat-value.success { color: var(--success); }
 .stat-value.pending { color: var(--pending); }
-.stat-card.pending.is-live-pending .stat-value.pending { text-shadow: 0 0 12px rgba(59,130,246,0.65); }
+.stat-card.pending.is-live-pending .stat-value.pending {
+  color: #60a5fa;
+  text-shadow: 0 0 10px rgba(96,165,250,0.95), 0 0 22px rgba(59,130,246,0.75);
+}
 .stat-value.reversed { color: var(--rev); }
 .stat-value.failed { color: var(--danger); }
 .stat-pct { font-size: 11px; color: var(--text3); }
@@ -490,6 +495,17 @@ tbody tr:hover td { background: var(--bg3); }
 @keyframes flashGlow {
   0% { background: rgba(79,140,255,0.3); }
   100% { background: transparent; }
+}
+
+@keyframes pendingCardAlert {
+  0%, 100% {
+    border-color: rgba(96,165,250,0.8);
+    box-shadow: 0 0 0 1px rgba(96,165,250,0.5), 0 0 16px rgba(59,130,246,0.35), inset 0 0 16px rgba(59,130,246,0.08);
+  }
+  50% {
+    border-color: rgba(147,197,253,1);
+    box-shadow: 0 0 0 1px rgba(147,197,253,0.95), 0 0 34px rgba(59,130,246,0.85), inset 0 0 28px rgba(59,130,246,0.18);
+  }
 }
 
 @keyframes pendingRowBlink {
