@@ -163,6 +163,13 @@ let latestSuccessRate = "88.7%";
 
 const CLIENT_STOP_NORMAL_MIN = 15;
 const CLIENT_STOP_IDLE_MS = 30 * 60 * 1000;
+const CLIENT_STOP_DEMO_INTERVAL_MS = 10 * 1000;
+const CLIENT_STOP_DEMO_VISIBLE_MS = 5 * 1000;
+const CLIENT_STOP_DEMO_MAX_ROWS = 30;
+const ALERT_DEMO_INTERVAL_MS = 10 * 1000;
+const ALERT_DEMO_VISIBLE_MS = 5 * 1000;
+const INCIDENT_DEMO_MAX_ROWS = 30;
+const LOSS_TRX_DEMO_MAX_ROWS = 30;
 const DEMO_PENDING_INTERVAL_MS = 5000;
 const DEMO_PENDING_RESOLVE_MS = 2000;
 const LIVE_PENDING = new Map();
@@ -175,6 +182,39 @@ const ALERTS_STOP = [
   { client: "Dana [API]", product: "TSEL50", detail: "Traffic stopped on prepaid route", since: "18:18" },
   { client: "Blibli [H2H]", product: "I10", detail: "No callback traffic after inquiry spike", since: "18:12" },
   { client: "Traveloka [H2H]", product: "iPLN", detail: "No payment request after normal inquiry traffic", since: "18:08" },
+];
+
+const CLIENT_STOP_DEMO_POOL = [
+  { client: "Bukalapak [H2H IRS]", product: "S50", normal30mTraffic: 18 },
+  { client: "ShopeePay [H2H]", product: "PLN", normal30mTraffic: 22 },
+  { client: "Tokopedia [API]", product: "DANAKH", normal30mTraffic: 16 },
+  { client: "Dana [API]", product: "TSEL50", normal30mTraffic: 19 },
+  { client: "MitraPay [API]", product: "I10", normal30mTraffic: 21 },
+  { client: "Fastpay [H2H]", product: "S25", normal30mTraffic: 24 },
+  { client: "Traveloka [H2H]", product: "iPLN", normal30mTraffic: 17 },
+  { client: "Blibli [H2H]", product: "PLN", normal30mTraffic: 20 },
+  { client: "LinkAja [API]", product: "DANAKH", normal30mTraffic: 25 },
+  { client: "OVO [H2H]", product: "TSEL50", normal30mTraffic: 18 },
+  { client: "GoPay [API]", product: "PLN", normal30mTraffic: 23 },
+  { client: "MitraBukalapak [H2H]", product: "iBPJSTK", normal30mTraffic: 16 },
+  { client: "Astrapay [API]", product: "DANAKH", normal30mTraffic: 20 },
+  { client: "Doku [H2H]", product: "S50", normal30mTraffic: 26 },
+  { client: "Kiosbank [H2H]", product: "iPLN", normal30mTraffic: 19 },
+  { client: "Paytren [API]", product: "I10", normal30mTraffic: 17 },
+  { client: "KasPro [H2H]", product: "PLN", normal30mTraffic: 22 },
+  { client: "Sepulsa [API]", product: "TSEL50", normal30mTraffic: 24 },
+  { client: "Flip [API]", product: "DANAKH", normal30mTraffic: 18 },
+  { client: "Nicepay [H2H]", product: "S25", normal30mTraffic: 21 },
+  { client: "Finnet [H2H]", product: "iBPJSTK", normal30mTraffic: 27 },
+  { client: "MitraKios [API]", product: "iPLN", normal30mTraffic: 16 },
+  { client: "OttoPay [H2H]", product: "PLN", normal30mTraffic: 23 },
+  { client: "BillerOne [API]", product: "DANAKH", normal30mTraffic: 20 },
+  { client: "Klikoo [H2H]", product: "TSEL50", normal30mTraffic: 18 },
+  { client: "Payfazz [API]", product: "S50", normal30mTraffic: 25 },
+  { client: "MitraTopup [H2H]", product: "I10", normal30mTraffic: 17 },
+  { client: "PulsaHub [API]", product: "S25", normal30mTraffic: 22 },
+  { client: "BillPay [H2H]", product: "PLN", normal30mTraffic: 24 },
+  { client: "Nusapay [API]", product: "iPLN", normal30mTraffic: 19 },
 ];
 
 // Alert: product incidents
@@ -198,6 +238,27 @@ const ALERTS_PRODUCT = [
   { level: "warn", product: "TSEL50 / [Kisel ApiHub]", desc: "RC 99 crossed product anomaly threshold", time: "18:26" },
 ];
 
+const INCIDENT_DEMO_POOL = [
+  { level: "critical", product: "iPLN / [VSI]", desc: "Supplier callback: product close" },
+  { level: "warn", product: "DANAKH / [SMB]", desc: "RC 68 exceeded IT threshold filter" },
+  { level: "critical", product: "S50 / [Kisel ApiHub]", desc: "Supplier callback: product close" },
+  { level: "warn", product: "I10 / [Indotel]", desc: "RC 91 exceeded IT threshold filter" },
+  { level: "warn", product: "PLN / [VSI]", desc: "RC 96 repeated on inquiry route" },
+  { level: "critical", product: "iBPJSTK / [Bima Sakti]", desc: "Supplier maintenance callback received" },
+  { level: "warn", product: "TSEL50 / [Kisel ApiHub]", desc: "RC 99 crossed product anomaly threshold" },
+  { level: "critical", product: "S25 / [Indotel]", desc: "Supplier callback: product close" },
+  { level: "warn", product: "TSEL100 / [SMB]", desc: "RC 68 repeated above monitoring threshold" },
+  { level: "critical", product: "DANA50 / [SMB]", desc: "Callback product unavailable" },
+  { level: "warn", product: "OVO25 / [Bima Sakti]", desc: "RC 91 crossed route threshold" },
+  { level: "critical", product: "PLNPOST / [VSI]", desc: "Inquiry route timeout spike" },
+  { level: "warn", product: "BPJSKES / [Indotel]", desc: "RC 96 repeated in payment route" },
+  { level: "critical", product: "GOPAY / [Kisel ApiHub]", desc: "Supplier maintenance callback received" },
+  { level: "warn", product: "LINKAJA / [SMB]", desc: "RC 99 crossed product anomaly threshold" },
+  { level: "critical", product: "SHOPEEPAY / [VSI]", desc: "Product close callback received" },
+  { level: "warn", product: "TELKOM / [Indotel]", desc: "RC 68 exceeded IT threshold filter" },
+  { level: "critical", product: "PDAM / [Bima Sakti]", desc: "Supplier response timeout cluster" },
+];
+
 // Alert: loss transactions
 const ALERTS_RUGI = [
   {
@@ -212,6 +273,27 @@ const ALERTS_RUGI = [
   { id: "2455488", client: "Tokopedia [API]", product: "TSEL50", rugi: "Rp500", time: "18:59" },
   { id: "2455462", client: "ShopeePay [H2H]", product: "DANAKH", rugi: "Rp1.450", time: "18:54" },
   { id: "2455410", client: "Dana [API]", product: "I10", rugi: "Rp275", time: "18:48" },
+];
+
+const LOSS_TRX_DEMO_POOL = [
+  { client: "bkpay [H2H]", product: "DANAKH", rugi: 1200 },
+  { client: "Bukalapak [H2H IRS]", product: "S50", rugi: 350 },
+  { client: "Hotelmurah [H2H]", product: "PLN", rugi: 850 },
+  { client: "Tokopedia [API]", product: "TSEL50", rugi: 500 },
+  { client: "ShopeePay [H2H]", product: "DANAKH", rugi: 1450 },
+  { client: "Dana [API]", product: "I10", rugi: 275 },
+  { client: "Traveloka [H2H]", product: "iPLN", rugi: 650 },
+  { client: "Fastpay [H2H]", product: "S25", rugi: 425 },
+  { client: "MitraPay [API]", product: "PLN", rugi: 900 },
+  { client: "Blibli [H2H]", product: "TSEL50", rugi: 700 },
+  { client: "OVO [H2H]", product: "DANAKH", rugi: 1100 },
+  { client: "GoPay [API]", product: "PLN", rugi: 575 },
+  { client: "Astrapay [API]", product: "S50", rugi: 375 },
+  { client: "Doku [H2H]", product: "I10", rugi: 250 },
+  { client: "Finnet [H2H]", product: "iBPJSTK", rugi: 1600 },
+  { client: "Payfazz [API]", product: "TSEL100", rugi: 800 },
+  { client: "BillPay [H2H]", product: "PDAM", rugi: 950 },
+  { client: "Nusapay [API]", product: "LINKAJA", rugi: 525 },
 ];
 
 // Alert: low balance
@@ -522,7 +604,7 @@ function upsertClientStopAlert(alert) {
   const exists = ALERTS_STOP.findIndex((a) => a.client.split(" ")[0] === clientKey);
   if (exists >= 0) ALERTS_STOP.splice(exists, 1);
   ALERTS_STOP.unshift(alert);
-  limitAlertRows(ALERTS_STOP, 6);
+  limitAlertRows(ALERTS_STOP, CLIENT_STOP_DEMO_MAX_ROWS);
 }
 
 function processAlertRules(trx, trafficRow) {
@@ -561,28 +643,99 @@ function simulateBalanceUsage(trx) {
 }
 
 function updateClientStopAlerts() {
+  return ALERTS_STOP;
+}
+
+function buildDemoClientStopBatch() {
+  const shuffled = [...CLIENT_STOP_DEMO_POOL].sort(() => Math.random() - 0.5);
+  const count = Math.min(
+    CLIENT_STOP_DEMO_MAX_ROWS,
+    Math.floor(Math.random() * 23) + 8,
+    shuffled.length,
+  );
   const nowMs = Date.now();
 
-  for (let i = ALERTS_STOP.length - 1; i >= 0; i--) {
-    const clientName = ALERTS_STOP[i].client.split(" ")[0];
-    const row = TRAFFIC.find((t) => t.client === clientName);
-    if (!row || nowMs - row.lastTrafficAt < CLIENT_STOP_IDLE_MS) ALERTS_STOP.splice(i, 1);
-  }
+  return shuffled.slice(0, count).map((row, index) => {
+    const idleMinutes = Math.floor(Math.random() * 54) + 31;
+    const stoppedAt = new Date(nowMs - idleMinutes * 60 * 1000);
+    const reasons = [
+      `No new traffic for ${idleMinutes} minutes, normally ${row.normal30mTraffic} trx / 30 minutes`,
+      `Traffic dropped to 0 for ${idleMinutes} minutes on normally busy route`,
+      `No request received after regular ${row.normal30mTraffic} trx / 30 minutes pattern`,
+      `Monitoring detected idle route for ${idleMinutes} minutes`,
+    ];
 
-  TRAFFIC.forEach((row) => {
-    const isNormallyBusy = row.normal30mTraffic > CLIENT_STOP_NORMAL_MIN;
-    const idleMs = nowMs - row.lastTrafficAt;
-
-    if (isNormallyBusy && idleMs >= CLIENT_STOP_IDLE_MS) {
-      const idleMinutes = Math.floor(idleMs / 60000);
-      upsertClientStopAlert({
-        client: `${row.client} [H2H]`,
-        product: "-",
-        detail: `No new traffic for ${idleMinutes} minutes, normally ${row.normal30mTraffic} trx / 30 minutes`,
-        since: shortTime(new Date(row.lastTrafficAt)),
-      });
-    }
+    return {
+      client: row.client,
+      product: row.product,
+      detail: reasons[index % reasons.length],
+      since: shortTime(stoppedAt),
+    };
   });
+}
+
+function showDemoClientStopBatch() {
+  ALERTS_STOP.splice(0, ALERTS_STOP.length, ...buildDemoClientStopBatch());
+  renderAllAlerts();
+
+  setTimeout(() => {
+    ALERTS_STOP.splice(0, ALERTS_STOP.length);
+    renderAllAlerts();
+  }, CLIENT_STOP_DEMO_VISIBLE_MS);
+}
+
+function startClientStopDemoFeed() {
+  showDemoClientStopBatch();
+  setInterval(showDemoClientStopBatch, CLIENT_STOP_DEMO_INTERVAL_MS + CLIENT_STOP_DEMO_VISIBLE_MS);
+}
+
+function buildDemoIncidentBatch() {
+  const shuffled = [...INCIDENT_DEMO_POOL].sort(() => Math.random() - 0.5);
+  const count = Math.min(
+    INCIDENT_DEMO_MAX_ROWS,
+    Math.floor(Math.random() * 11) + 5,
+    shuffled.length,
+  );
+
+  return shuffled.slice(0, count).map((row, index) => ({
+    ...row,
+    time: shortTime(new Date(Date.now() - (index * 3 + Math.floor(Math.random() * 8)) * 60 * 1000)),
+  }));
+}
+
+function buildDemoLossTrxBatch() {
+  const shuffled = [...LOSS_TRX_DEMO_POOL].sort(() => Math.random() - 0.5);
+  const count = Math.min(
+    LOSS_TRX_DEMO_MAX_ROWS,
+    Math.floor(Math.random() * 11) + 5,
+    shuffled.length,
+  );
+  const baseId = 2455600 + Math.floor(Math.random() * 200);
+
+  return shuffled.slice(0, count).map((row, index) => ({
+    id: String(baseId - index),
+    client: row.client,
+    product: row.product,
+    rugi: formatMoney(row.rugi + Math.floor(Math.random() * 6) * 100),
+    time: shortTime(new Date(Date.now() - (index * 2 + Math.floor(Math.random() * 6)) * 60 * 1000)),
+  }));
+}
+
+function showDemoIncidentAndLossBatch() {
+  ALERTS_PRODUCT.splice(0, ALERTS_PRODUCT.length, ...buildDemoIncidentBatch());
+  ALERTS_RUGI.splice(0, ALERTS_RUGI.length, ...buildDemoLossTrxBatch());
+  renderAllAlerts();
+
+  setTimeout(() => {
+    ALERTS_PRODUCT.splice(0, ALERTS_PRODUCT.length);
+    ALERTS_RUGI.splice(0, ALERTS_RUGI.length);
+    renderAllAlerts();
+  }, ALERT_DEMO_VISIBLE_MS);
+}
+
+function startIncidentAndLossDemoFeed() {
+  showDemoIncidentAndLossBatch();
+  setInterval(showDemoIncidentAndLossBatch, ALERT_DEMO_INTERVAL_MS + ALERT_DEMO_VISIBLE_MS);
 }
 
 // Switch alert tab
@@ -856,10 +1009,8 @@ document.addEventListener("DOMContentLoaded", () => {
   updateSummaryStats();
   simulateLiveTraffic();
   startPendingDemoFeed();
-  setInterval(() => {
-    updateClientStopAlerts();
-    renderAllAlerts();
-  }, 60 * 1000);
+  startClientStopDemoFeed();
+  startIncidentAndLossDemoFeed();
 });
 
 // Live traffic simulator
