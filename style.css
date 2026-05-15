@@ -837,3 +837,95 @@ tbody tr:hover td { background: var(--bg3); }
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.06); }
 }
+
+/* TV / desktop space balancing tweak */
+@media (min-width: 901px) {
+  /* Biar Transaction List lebih penuh di layar TV tanpa keliatan kegedean */
+  .trx-table th {
+    padding-top: clamp(14px, 1.25vh, 18px);
+    padding-bottom: clamp(14px, 1.25vh, 18px);
+    font-size: clamp(10.5px, 0.68vw, 12px);
+    font-weight: 800;
+  }
+
+  .trx-table td {
+    padding-top: clamp(15px, 1.45vh, 23px);
+    padding-bottom: clamp(15px, 1.45vh, 23px);
+    font-size: clamp(13px, 0.78vw, 14.5px);
+    font-weight: 650;
+  }
+
+  .trx-table .mono-sm,
+  .trx-table .price-text,
+  .trx-table .margin-text,
+  .trx-table .trx-id {
+    font-size: clamp(12.5px, 0.74vw, 14px);
+    font-weight: 700;
+  }
+
+  .trx-table .client-tag,
+  .trx-table .sup-badge,
+  .trx-table .status-pill {
+    font-size: clamp(11.5px, 0.7vw, 13px);
+    font-weight: 800;
+  }
+
+  .trx-table .status-pill {
+    padding: 4px 11px;
+  }
+
+  .trx-table .client-tag,
+  .trx-table .sup-badge {
+    padding-top: 3px;
+    padding-bottom: 3px;
+  }
+
+  /* Kanan: Balance Monitor dan Alert Monitor dibagi rata agar bawahnya nggak kosong */
+  .grid-right {
+    height: 100%;
+  }
+
+  .grid-right .balance-card,
+  .grid-right .balance-card + .card {
+    flex: 1 1 0;
+    min-height: 0;
+  }
+
+  .grid-right .balance-card {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .balance-scroll,
+  .alert-scroll {
+    flex: 1 1 auto;
+    max-height: none;
+    min-height: 0;
+    overflow: auto;
+  }
+
+  .balance-table th,
+  .balance-table td,
+  .alert-table th,
+  .alert-table td {
+    padding-top: clamp(9px, 0.85vh, 14px);
+    padding-bottom: clamp(9px, 0.85vh, 14px);
+  }
+
+  .alert-panel {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+}
+
+@media (min-width: 1500px) {
+  .trx-table td {
+    padding-top: clamp(18px, 1.65vh, 25px);
+    padding-bottom: clamp(18px, 1.65vh, 25px);
+  }
+
+  .trx-table th {
+    padding-top: 16px;
+    padding-bottom: 16px;
+  }
+}
