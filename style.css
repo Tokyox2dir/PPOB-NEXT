@@ -471,13 +471,209 @@ tbody tr:hover td { background: var(--bg3); }
 }
 
 @media (max-width: 900px) {
-  body { overflow-y: auto; height: auto; }
-  .layout, .main, .content { height: auto; display: block; }
+  body {
+    overflow-y: auto;
+    height: auto;
+    font-size: 13px;
+  }
+  .layout, .main, .content {
+    height: auto;
+    min-height: 0;
+  }
+  .layout {
+    display: block;
+  }
   .sidebar { display: none; }
-  .main { margin-left: 0; }
-  .stats-row { grid-template-columns: repeat(2, 1fr); }
-  .scrollable { overflow: visible; height: auto; }
-  .top-charts-row { grid-template-columns: 1fr; }
+  .main {
+    margin-left: 0;
+    display: block;
+    width: 100%;
+  }
+  .content {
+    display: flex;
+    padding: 12px;
+    gap: 12px;
+    overflow: visible;
+  }
+  .topbar {
+    height: auto;
+    min-height: 56px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    padding: 12px;
+    gap: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .topbar-title {
+    flex: 1 1 100%;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .topbar-title span {
+    display: block;
+    margin-left: 0;
+    margin-top: 2px;
+  }
+  .topbar-actions {
+    width: 100%;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .btn {
+    min-height: 34px;
+    padding: 7px 10px;
+  }
+  .filter-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 12px;
+    gap: 10px;
+    border-radius: 10px;
+  }
+  .filter-input {
+    width: 100%;
+    min-width: 0;
+    height: 36px;
+  }
+  .filter-actions {
+    grid-column: 1 / -1;
+    align-self: stretch;
+  }
+  .filter-actions .btn {
+    flex: 1;
+    justify-content: center;
+  }
+  .stats-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .stat-card {
+    min-height: 82px;
+    padding: 12px;
+    border-radius: 10px;
+  }
+  .stat-label {
+    font-size: 9.5px;
+    letter-spacing: 0.8px;
+  }
+  .stat-value {
+    font-size: 20px;
+  }
+  .dashboard-main-grid,
+  .top-charts-row {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .grid-left,
+  .grid-right {
+    gap: 12px;
+  }
+  .chart-body {
+    height: 230px;
+    padding: 12px;
+  }
+  .donut-body {
+    height: auto;
+    min-height: 210px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .donut-wrap {
+    min-height: 150px;
+  }
+  .donut-legend {
+    min-width: 0;
+    width: 100%;
+  }
+  .card {
+    border-radius: 10px;
+  }
+  .card-header {
+    padding: 11px 12px 9px;
+    gap: 8px;
+  }
+  .card-title {
+    font-size: 11px;
+    letter-spacing: 0.5px;
+  }
+  .scrollable {
+    overflow: visible;
+    height: auto;
+  }
+  .table-wrap {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+  .trx-table {
+    min-width: 980px;
+  }
+  .traffic-table,
+  .alert-table {
+    min-width: 520px;
+  }
+  th,
+  td {
+    padding: 8px 10px;
+    font-size: 11.5px;
+  }
+  .pagination {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+  .page-btns {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+  .alert-header-top {
+    align-items: flex-start;
+    gap: 8px;
+    padding: 11px 12px 9px;
+  }
+  .alert-tabs {
+    overflow-x: auto;
+  }
+  .alert-tab {
+    min-width: 120px;
+    flex: 0 0 auto;
+  }
+}
+
+@media (max-width: 560px) {
+  .content {
+    padding: 10px;
+  }
+  .filter-bar {
+    grid-template-columns: 1fr;
+  }
+  .stats-row {
+    grid-template-columns: 1fr 1fr;
+  }
+  .stat-card {
+    min-height: 78px;
+    padding: 11px;
+  }
+  .stat-value {
+    font-size: 18px;
+  }
+  .chart-body {
+    height: 220px;
+  }
+  .badge-live {
+    padding: 4px 8px;
+  }
+  .btn {
+    font-size: 12px;
+  }
+  .topbar-actions .btn-primary {
+    display: none;
+  }
 }
 
 /* ── FADE IN ─────────────────────────────────── */
