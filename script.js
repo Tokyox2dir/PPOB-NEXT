@@ -338,9 +338,15 @@ function updateAlertBadges() {
   if (headerBadges[1]) headerBadges[1].textContent = `${warnCount} warn`;
 
   const tabBadges = document.querySelectorAll(".alert-tab .tab-badge");
-  if (tabBadges[0]) tabBadges[0].textContent = ALERTS_STOP.length;
-  if (tabBadges[1]) tabBadges[1].textContent = ALERTS_PRODUCT.length;
-  if (tabBadges[2]) tabBadges[2].textContent = ALERTS_RUGI.length;
+  updateTabBadge(tabBadges[0], ALERTS_STOP.length);
+  updateTabBadge(tabBadges[1], ALERTS_PRODUCT.length);
+  updateTabBadge(tabBadges[2], ALERTS_RUGI.length);
+}
+
+function updateTabBadge(badge, count) {
+  if (!badge) return;
+  badge.textContent = count;
+  badge.classList.toggle("is-alerting", count > 0);
 }
 
 function upsertProductAlert(alert) {

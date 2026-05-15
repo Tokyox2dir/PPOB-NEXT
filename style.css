@@ -15,8 +15,8 @@
   --danger-bg: rgba(239,68,68,0.1);
   --warn: #f59e0b;
   --warn-bg: rgba(245,158,11,0.1);
-  --pending: #3b82f6;
-  --pending-bg: rgba(59,130,246,0.1);
+  --pending: #f59e0b;
+  --pending-bg: rgba(245,158,11,0.12);
   --rev: #f97316;
   --rev-bg: rgba(249,115,22,0.1);
   --card-radius: 14px;
@@ -41,8 +41,8 @@
   --danger-bg: rgba(220,38,38,0.08);
   --warn: #d97706;
   --warn-bg: rgba(217,119,6,0.08);
-  --pending: #2563eb;
-  --pending-bg: rgba(37,99,235,0.08);
+  --pending: #d97706;
+  --pending-bg: rgba(217,119,6,0.1);
   --rev: #ea580c;
   --rev-bg: rgba(234,88,12,0.08);
 }
@@ -142,9 +142,9 @@ select.filter-input { cursor: pointer; }
   visibility: visible;
   opacity: 1;
   transform: none;
-  background: linear-gradient(135deg, rgba(59,130,246,0.2), var(--bg2) 58%);
-  border-color: rgba(96,165,250,1);
-  box-shadow: 0 0 0 1px rgba(96,165,250,0.75), 0 0 22px rgba(59,130,246,0.55), inset 0 0 22px rgba(59,130,246,0.12);
+  background: linear-gradient(135deg, rgba(245,158,11,0.2), var(--bg2) 58%);
+  border-color: rgba(251,191,36,1);
+  box-shadow: 0 0 0 1px rgba(251,191,36,0.75), 0 0 22px rgba(245,158,11,0.55), inset 0 0 22px rgba(245,158,11,0.12);
   animation: pendingCardAlert 0.9s ease-in-out infinite;
 }
 .stat-card > * { position: relative; z-index: 1; }
@@ -154,8 +154,8 @@ select.filter-input { cursor: pointer; }
 .stat-value.success { color: var(--success); }
 .stat-value.pending { color: var(--pending); }
 .stat-card.pending.is-live-pending .stat-value.pending {
-  color: #60a5fa;
-  text-shadow: 0 0 10px rgba(96,165,250,0.95), 0 0 22px rgba(59,130,246,0.75);
+  color: #fbbf24;
+  text-shadow: 0 0 10px rgba(251,191,36,0.95), 0 0 22px rgba(245,158,11,0.75);
 }
 .stat-value.reversed { color: var(--rev); }
 .stat-value.failed { color: var(--danger); }
@@ -425,6 +425,10 @@ tbody tr:hover td { background: var(--bg3); }
   font-weight: 700;
   padding: 1px 5px;
   border-radius: 8px;
+}
+.tab-badge.is-alerting {
+  box-shadow: 0 0 0 0 currentColor;
+  animation: tabBadgeAlert 0.95s ease-in-out infinite;
 }
 
 /* Alert panels */
@@ -729,12 +733,25 @@ tbody tr:hover td { background: var(--bg3); }
 
 @keyframes pendingCardAlert {
   0%, 100% {
-    border-color: rgba(96,165,250,0.8);
-    box-shadow: 0 0 0 1px rgba(96,165,250,0.5), 0 0 16px rgba(59,130,246,0.35), inset 0 0 16px rgba(59,130,246,0.08);
+    border-color: rgba(251,191,36,0.8);
+    box-shadow: 0 0 0 1px rgba(251,191,36,0.5), 0 0 16px rgba(245,158,11,0.35), inset 0 0 16px rgba(245,158,11,0.08);
   }
   50% {
-    border-color: rgba(147,197,253,1);
-    box-shadow: 0 0 0 1px rgba(147,197,253,0.95), 0 0 34px rgba(59,130,246,0.85), inset 0 0 28px rgba(59,130,246,0.18);
+    border-color: rgba(253,224,71,1);
+    box-shadow: 0 0 0 1px rgba(253,224,71,0.95), 0 0 34px rgba(245,158,11,0.85), inset 0 0 28px rgba(245,158,11,0.18);
+  }
+}
+
+@keyframes tabBadgeAlert {
+  0%, 100% {
+    filter: brightness(1);
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255,255,255,0);
+  }
+  50% {
+    filter: brightness(1.45);
+    transform: scale(1.14);
+    box-shadow: 0 0 12px currentColor;
   }
 }
 
