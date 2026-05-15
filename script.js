@@ -1,3 +1,11 @@
+setTimeout(() => {
+  const firstRow = document.querySelector("#trx-tbody tr");
+  if (firstRow) {
+    firstRow.classList.add("flash");
+    setTimeout(() => firstRow.classList.remove("flash"), 800);
+  }
+}, 100);
+
 // ── DATA ─────────────────────────────────────────────────
 const RAW = [
   {
@@ -134,27 +142,18 @@ const RAW = [
 
 // ── TRAFFIC DATA ─────────────────────────────────────────
 const TRAFFIC = [
-  { client: "bkpay", today: 3820, yesterday: 3210 },
-  { client: "Hotelmurah", today: 1840, yesterday: 1990 },
-  { client: "Bukalapak", today: 980, yesterday: 870 },
-  { client: "Telin", today: 620, yesterday: 720 },
-  { client: "correct", today: 355, yesterday: 280 },
+  { client: "bkpay", today: 3820, yesterday: 3210, normal30mTraffic: 42, lastTrafficAt: Date.now(), lastTick: 0 },
+  { client: "Hotelmurah", today: 1840, yesterday: 1990, normal30mTraffic: 28, lastTrafficAt: Date.now(), lastTick: 0 },
+  { client: "Bukalapak", today: 980, yesterday: 870, normal30mTraffic: 17, lastTrafficAt: Date.now(), lastTick: 0 },
+  { client: "Telin", today: 620, yesterday: 720, normal30mTraffic: 9, lastTrafficAt: Date.now(), lastTick: 0 },
+  { client: "correct", today: 355, yesterday: 280, normal30mTraffic: 6, lastTrafficAt: Date.now(), lastTick: 0 },
 ];
+
+const CLIENT_STOP_NORMAL_MIN = 15;
+const CLIENT_STOP_IDLE_MS = 30 * 60 * 1000;
 
 // ── ALERT: CLIENT STOP ───────────────────────────────────
 const ALERTS_STOP = [
-  {
-    client: "Hotelmurah [H2H]",
-    product: "iPLN",
-    detail: "Traffic turun 22% vs kemarin jam 11 — threshold breach",
-    since: "11:15",
-  },
-  {
-    client: "Telin [H2H Sync]",
-    product: "iBPJSTK",
-    detail: "Response time >900ms, kemungkinan timeout supplier",
-    since: "11:19",
-  },
 ];
 
 // ── ALERT: PRODUCT GANGGUAN ──────────────────────────────
@@ -162,20 +161,14 @@ const ALERTS_PRODUCT = [
   {
     level: "critical",
     product: "iPLN / [VSI]",
-    desc: "Reversed rate naik ke 11.3% (threshold: 10%)",
+    desc: "Supplier callback: product close",
     time: "11:10",
   },
   {
     level: "warn",
     product: "DANAKH / [SMB]",
-    desc: "1 transaksi reversed terdeteksi, monitor ketat",
+    desc: "RC 68 melewati threshold filter IT",
     time: "11:18",
-  },
-  {
-    level: "info",
-    product: "I10 / [Indotel]",
-    desc: "Semua produk normal, performa stabil",
-    time: "11:00",
   },
 ];
 
@@ -199,6 +192,8 @@ function renderTraffic() {
     const pct = ((diff / t.yesterday) * 100).toFixed(1);
     const dir = diff > 0 ? "up" : diff < 0 ? "down" : "flat";
     const sign = diff > 0 ? "+" : "";
+    const tickDir = t.lastTick > 0 ? "hot" : t.lastTick < 0 ? "drop" : "";
+    const tickSign = t.lastTick > 0 ? "+" : "";
     const barColor =
       dir === "up"
         ? "var(--success)"
@@ -206,19 +201,51 @@ function renderTraffic() {
           ? "var(--danger)"
           : "var(--text3)";
     const barW = Math.round((t.today / max) * 100);
-    return `<tr>
-      <td><span class="traffic-client">${t.client}</span></td>
-      <td><span class="mono-sm">${t.today.toLocaleString("id")}</span></td>
+    return `<tr class="${tickDir ? "traffic-pulse" : ""}">
+      <td><span class="traffic-client"><span class="live-dot ${tickDir}"></span>${t.client}</span></td>
+      <td>
+        <span class="mono-sm">${t.today.toLocaleString("id")}</span>
+        ${tickDir ? `<span class="traffic-tick ${tickDir}">${tickSign}${t.lastTick}</span>` : ""}
+      </td>
       <td><span class="mono-sm" style="color:var(--text3);">${t.yesterday.toLocaleString("id")}</span></td>
       <td><span class="delta ${dir}">${sign}${pct}%</span></td>
       <td><div class="mini-bar"><div class="mini-bar-fill" style="width:${barW}%;background:${barColor};"></div></div></td>
     </tr>`;
   }).join("");
+
+  TRAFFIC.forEach((t) => (t.lastTick = 0));
+}
+
+function updateSummaryStats() {
+  const total = TRAFFIC.reduce((sum, t) => sum + t.today, 0);
+  const reversed = Math.max(0, Math.round(total * 0.112 + Math.random() * 8));
+  const pending = Math.max(1, Math.round(total * 0.0004));
+  const failed = Math.random() > 0.85 ? 1 : 0;
+  const processing = Math.random() > 0.75 ? Math.floor(Math.random() * 4) + 1 : 0;
+  const success = Math.max(0, total - reversed - pending - failed - processing);
+  const successPct = total ? ((success / total) * 100).toFixed(1) : "0.0";
+
+  document.getElementById("s-total").textContent = total.toLocaleString("id");
+  document.getElementById("s-success").textContent = success.toLocaleString("id");
+  document.getElementById("s-success-pct").textContent = `${successPct}%`;
+  document.getElementById("s-pending").textContent = pending.toLocaleString("id");
+  document.getElementById("s-rev").textContent = reversed.toLocaleString("id");
+  document.getElementById("s-failed").textContent = failed.toLocaleString("id");
+  document.getElementById("s-proc").textContent = processing.toLocaleString("id");
+
+  if (chartDonut) {
+    chartDonut.data.datasets[0].data = [success, reversed, pending, failed];
+    chartDonut.update("none");
+  }
 }
 
 // ── RENDER ALERT: CLIENT STOP ────────────────────────────
 function renderAlertStop() {
   const tbody = document.getElementById("alert-stop-tbody");
+  if (!ALERTS_STOP.length) {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text3); padding:20px 0; font-size:12px;">Tidak ada client stop terdeteksi</td></tr>`;
+    return;
+  }
   tbody.innerHTML = ALERTS_STOP.map(
     (a) => `<tr>
     <td>
@@ -237,6 +264,10 @@ function renderAlertStop() {
 // ── RENDER ALERT: PRODUCT GANGGUAN ──────────────────────
 function renderAlertProduct() {
   const tbody = document.getElementById("alert-product-tbody");
+  if (!ALERTS_PRODUCT.length) {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text3); padding:20px 0; font-size:12px;">Tidak ada gangguan produk terdeteksi</td></tr>`;
+    return;
+  }
   tbody.innerHTML = ALERTS_PRODUCT.map((a) => {
     const cls =
       a.level === "critical"
@@ -276,6 +307,89 @@ function renderAlertRugi() {
   ).join("");
 }
 
+function renderAllAlerts() {
+  renderAlertStop();
+  renderAlertProduct();
+  renderAlertRugi();
+  updateAlertBadges();
+}
+
+function updateAlertBadges() {
+  const criticalCount = ALERTS_PRODUCT.filter((a) => a.level === "critical").length + ALERTS_STOP.length;
+  const warnCount = ALERTS_PRODUCT.filter((a) => a.level === "warn").length + ALERTS_RUGI.length;
+  const headerBadges = document.querySelectorAll(".alert-count-badge");
+  if (headerBadges[0]) headerBadges[0].textContent = `${criticalCount} kritis`;
+  if (headerBadges[1]) headerBadges[1].textContent = `${warnCount} warn`;
+
+  const tabBadges = document.querySelectorAll(".alert-tab .tab-badge");
+  if (tabBadges[0]) tabBadges[0].textContent = ALERTS_STOP.length;
+  if (tabBadges[1]) tabBadges[1].textContent = ALERTS_PRODUCT.length;
+  if (tabBadges[2]) tabBadges[2].textContent = ALERTS_RUGI.length;
+}
+
+function upsertProductAlert(alert) {
+  const sameKey = `${alert.product}|${alert.level}`;
+  const exists = ALERTS_PRODUCT.findIndex((a) => `${a.product}|${a.level}` === sameKey);
+  if (exists >= 0) ALERTS_PRODUCT.splice(exists, 1);
+  ALERTS_PRODUCT.unshift(alert);
+  limitAlertRows(ALERTS_PRODUCT);
+}
+
+function upsertClientStopAlert(alert) {
+  const clientKey = alert.client.split(" ")[0];
+  const exists = ALERTS_STOP.findIndex((a) => a.client.split(" ")[0] === clientKey);
+  if (exists >= 0) ALERTS_STOP.splice(exists, 1);
+  ALERTS_STOP.unshift(alert);
+  limitAlertRows(ALERTS_STOP, 6);
+}
+
+function processAlertRules(trx, trafficRow) {
+  const now = shortTime();
+  const margin = parseSignedMoney(trx.margin);
+
+  if (margin < 0) {
+    ALERTS_RUGI.unshift({
+      id: trx.id,
+      client: trx.client,
+      product: trx.product,
+      rugi: formatMoney(Math.abs(margin)),
+      time: now,
+    });
+    limitAlertRows(ALERTS_RUGI, 8);
+  }
+
+  const productIncident = detectProductIncident(trx);
+  if (productIncident) upsertProductAlert({ ...productIncident, time: now });
+
+  updateClientStopAlerts();
+  renderAllAlerts();
+}
+
+function updateClientStopAlerts() {
+  const nowMs = Date.now();
+
+  for (let i = ALERTS_STOP.length - 1; i >= 0; i--) {
+    const clientName = ALERTS_STOP[i].client.split(" ")[0];
+    const row = TRAFFIC.find((t) => t.client === clientName);
+    if (!row || nowMs - row.lastTrafficAt < CLIENT_STOP_IDLE_MS) ALERTS_STOP.splice(i, 1);
+  }
+
+  TRAFFIC.forEach((row) => {
+    const isNormallyBusy = row.normal30mTraffic > CLIENT_STOP_NORMAL_MIN;
+    const idleMs = nowMs - row.lastTrafficAt;
+
+    if (isNormallyBusy && idleMs >= CLIENT_STOP_IDLE_MS) {
+      const idleMinutes = Math.floor(idleMs / 60000);
+      upsertClientStopAlert({
+        client: `${row.client} [H2H]`,
+        product: "-",
+        detail: `Tidak ada traffic baru ${idleMinutes} menit, normalnya ${row.normal30mTraffic} trx / 30 menit`,
+        since: shortTime(new Date(row.lastTrafficAt)),
+      });
+    }
+  });
+}
+
 // ── SWITCH ALERT TAB ─────────────────────────────────────
 function switchAlertTab(tab, btn) {
   // deactivate all tabs & panels
@@ -300,6 +414,7 @@ function renderTrx() {
     .map((r, i) => {
       const stcls = r.status.toLowerCase();
       const clientShort = r.client.split(" ")[0];
+      const marginClass = parseSignedMoney(r.margin) < 0 ? "loss" : "";
       return `<tr>
       <td style="color:var(--text3);font-size:11px;">${i + 1}</td>
       <td><span class="trx-id">${r.id}</span></td>
@@ -310,7 +425,7 @@ function renderTrx() {
       <td><span class="mono-sm" style="color:var(--text3);">15-06 ${r.time}</span></td>
       <td><span class="mono-sm" style="color:${parseFloat(r.dur) > 0.5 ? "var(--warn)" : "var(--text3)"};">${r.dur}s</span></td>
       <td><span class="price-text">${r.price}</span></td>
-      <td><span class="margin-text">${r.margin}</span></td>
+      <td><span class="margin-text ${marginClass}">${r.margin}</span></td>
       <td style="color:var(--text3);max-width:120px;overflow:hidden;text-overflow:ellipsis;">${r.reason}</td>
       <td><span class="status-pill ${stcls}">${r.status}</span></td>
     </tr>`;
@@ -354,8 +469,8 @@ function initCharts() {
   const c = getChartColors();
   Chart.defaults.font.family = "'DM Sans', sans-serif";
 
-  // Hourly
   const ctxH = document.getElementById("chartHourly").getContext("2d");
+
   chartHourly = new Chart(ctxH, {
     type: "line",
     data: {
@@ -372,26 +487,25 @@ function initCharts() {
       datasets: [
         {
           label: "Hari Ini",
-          data: [420, 680, 890, 1020, 1140, 1250, 1380, 835],
+          data: [420, 510, 780, 690, 980, 1200, 1100, 1350],
           borderColor: "#4f8cff",
           backgroundColor: "rgba(79,140,255,0.08)",
           borderWidth: 2,
           tension: 0.4,
           fill: true,
-          pointRadius: 3,
-          pointBackgroundColor: "#4f8cff",
+          pointRadius: (ctx) => ctx.dataIndex === ctx.dataset.data.length - 1 ? 4 : 2,
+          pointHoverRadius: 5,
         },
         {
           label: "Kemarin",
-          data: [380, 610, 820, 950, 1060, 1180, 1290, 910],
+          data: [380, 450, 600, 880, 740, 990, 1050, 970],
           borderColor: "#555e78",
-          backgroundColor: "transparent",
-          borderWidth: 1.5,
           borderDash: [4, 3],
+          borderWidth: 1.5,
           tension: 0.4,
           fill: false,
-          pointRadius: 2,
-          pointBackgroundColor: "#555e78",
+          pointRadius: (ctx) => ctx.dataIndex === ctx.dataset.data.length - 1 ? 3 : 2,
+          pointHoverRadius: 4,
         },
       ],
     },
@@ -404,33 +518,21 @@ function initCharts() {
           labels: {
             color: c.tick,
             font: { size: 11 },
-            boxWidth: 18,
-            padding: 14,
           },
         },
         tooltip: {
           backgroundColor: c.tooltip,
-          borderColor: "rgba(255,255,255,0.1)",
-          borderWidth: 1,
-          titleColor: "#e8ecf4",
-          bodyColor: "#8b92a8",
         },
       },
       scales: {
-        x: {
-          grid: { color: c.grid },
-          ticks: { color: c.tick, font: { size: 10 } },
-        },
-        y: {
-          grid: { color: c.grid },
-          ticks: { color: c.tick, font: { size: 10 } },
-        },
+        x: { grid: { color: c.grid }, ticks: { color: c.tick } },
+        y: { grid: { color: c.grid }, ticks: { color: c.tick } },
       },
     },
   });
 
-  // Donut
   const ctxD = document.getElementById("chartDonut").getContext("2d");
+
   chartDonut = new Chart(ctxD, {
     type: "doughnut",
     data: {
@@ -439,25 +541,12 @@ function initCharts() {
         {
           data: [6755, 858, 2, 0],
           backgroundColor: ["#22c55e", "#f97316", "#3b82f6", "#ef4444"],
-          borderWidth: 0,
-          hoverOffset: 6,
         },
       ],
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
       cutout: "72%",
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: c.tooltip,
-          borderColor: "rgba(255,255,255,0.1)",
-          borderWidth: 1,
-          titleColor: "#e8ecf4",
-          bodyColor: "#8b92a8",
-        },
-      },
+      plugins: { legend: { display: false } },
     },
   });
 }
@@ -504,9 +593,225 @@ document.head.appendChild(spinStyle);
 document.addEventListener("DOMContentLoaded", () => {
   renderTrx();
   renderTraffic();
-  renderAlertStop();
-  renderAlertProduct();
-  renderAlertRugi();
+  renderAllAlerts();
   renderPagination();
   initCharts();
+  simulateLiveTraffic();
+  setInterval(() => {
+    updateClientStopAlerts();
+    renderAllAlerts();
+  }, 60 * 1000);
 });
+
+// ── 🚀 LIVE TRAFFIC SIMULATOR (REAL-TIME EFFECT) ─────────
+let lastTrxId = 2445900;
+
+// helper format
+function rand(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function parseMoney(str) {
+  return parseInt(str.replace(/[^\d]/g, "")) || 0;
+}
+
+function parseSignedMoney(str) {
+  const amount = parseInt(str.replace(/[^\d-]/g, ""), 10) || 0;
+  return str.includes("-") ? -Math.abs(amount) : amount;
+}
+
+function formatMoney(amount) {
+  const sign = amount < 0 ? "-" : "";
+  return `Rp${sign}${Math.abs(amount).toLocaleString("id")}`;
+}
+
+function shortTime(date = new Date()) {
+  return date.toTimeString().slice(0, 5);
+}
+
+function limitAlertRows(rows, max = 8) {
+  rows.splice(max);
+}
+
+function detectProductIncident(trx) {
+  const rcCandidates = ["68", "91", "96", "99"];
+  const shouldEmitRcAlert = trx.status === "Reversed" && Math.random() > 0.55;
+  const shouldEmitCloseAlert = Math.random() > 0.92;
+
+  if (shouldEmitCloseAlert) {
+    return {
+      level: "critical",
+      product: `${trx.product} / ${trx.supplier}`,
+      desc: "Supplier callback: product close",
+    };
+  }
+
+  if (shouldEmitRcAlert) {
+    const rc = rand(rcCandidates);
+    const level = rc === "68" || rc === "91" ? "critical" : "warn";
+    return {
+      level,
+      product: `${trx.product} / ${trx.supplier}`,
+      desc: `RC ${rc} melewati threshold filter IT`,
+    };
+  }
+
+  return null;
+}
+
+// ── 🚀 LIVE TRAFFIC SIMULATOR (FIXED REAL MOVEMENT) ─────────
+function simulateLiveTraffic() {
+  const clients = [
+    "Hotelmurah [H2H]",
+    "bkpay [H2H]",
+    "Bukalapak [API]",
+    "Telin [H2H]",
+    "correct [API]",
+  ];
+
+  const suppliers = [
+    "[VSI]",
+    "[SMB]",
+    "[Indotel]",
+    "[Bima Sakti]",
+    "[Kisel ApiHub]",
+  ];
+
+  const products = ["iPLN", "DANAKH", "TSEL50", "I10", "S25", "iBPJSTK"];
+  const statuses = ["Success", "Success", "Success", "Reversed", "Pending"];
+
+  function pushIncomingTraffic() {
+    if (document.hidden) {
+      scheduleNextTraffic();
+      return;
+    }
+
+    lastTrxId++;
+
+    const status = rand(statuses);
+    const product = rand(products);
+
+    const now = new Date();
+    const timeStr = now.toTimeString().split(" ")[0];
+
+    let dur = (Math.random() * 0.5).toFixed(3);
+    let reason = "Transaksi berhasil";
+
+    if (status === "Reversed") {
+      dur = (Math.random() * 2 + 1).toFixed(3);
+      reason = "Timeout dari supplier";
+    }
+
+    if (status === "Pending") {
+      dur = "0.000";
+      reason = "Menunggu balasan";
+    }
+
+    const client = rand(clients);
+    const supplier = rand(suppliers);
+    const isBillProduct = product === "iPLN";
+    const isLoss = !isBillProduct && status === "Success" && Math.random() > 0.78;
+    const marginValue = isBillProduct ? 0 : isLoss ? -(Math.floor(Math.random() * 1600) + 250) : Math.floor(Math.random() * 5) * 100;
+    const newTrx = {
+      id: lastTrxId.toString(),
+      client,
+      supplier,
+      product,
+      dest: "08" + Math.floor(Math.random() * 10000000000),
+      time: timeStr,
+      dur,
+      price:
+        isBillProduct
+          ? "Rp0"
+          : "Rp" + (Math.floor(Math.random() * 900) + 10) + ".000",
+      margin: formatMoney(marginValue),
+      reason,
+      status,
+    };
+
+    // =========================
+    // 1. UPDATE TABLE DATA
+    // =========================
+    RAW.unshift(newTrx);
+    RAW.pop();
+    renderTrx();
+
+    // =========================
+    // 2. TRAFFIC UPDATE
+    // =========================
+    const clientName = client.split(" ")[0];
+    const t = TRAFFIC.find((row) => row.client === clientName) || rand(TRAFFIC);
+    const burst = Math.floor(Math.random() * 24) + 7;
+    t.lastTrafficAt = Date.now();
+
+    if (status === "Success") {
+      t.today += burst;
+      t.lastTick = burst;
+    } else if (status === "Reversed") {
+      const drop = Math.floor(Math.random() * 8) + 3;
+      t.today = Math.max(0, t.today - drop);
+      t.lastTick = -drop;
+    } else {
+      const pendingBump = Math.floor(Math.random() * 5) + 1;
+      t.today += pendingBump;
+      t.lastTick = pendingBump;
+    }
+
+    TRAFFIC.forEach((row) => {
+      if (row !== t && Math.random() > 0.72) row.today += Math.floor(Math.random() * 4);
+      if (Math.random() > 0.86) row.yesterday += Math.floor(Math.random() * 3);
+    });
+
+    renderTraffic();
+    updateSummaryStats();
+    processAlertRules(newTrx, t);
+
+    // =========================
+    // 3. CHART FIX (REAL MOVEMENT)
+    // =========================
+    if (chartHourly) {
+      const now = new Date();
+      const label = now.toTimeString().slice(0, 8);
+
+      const successData = chartHourly.data.datasets[0].data;
+      const yesterdayData = chartHourly.data.datasets[1].data;
+
+      const lastToday = successData.at(-1);
+      const lastYesterday = yesterdayData.at(-1);
+
+      const wave = Math.sin(Date.now() / 2600) * 36;
+      const jitter = Math.floor(Math.random() * 95) - 38;
+      const statusImpact =
+        status === "Success" ? Math.floor(Math.random() * 70) + 28 :
+        status === "Reversed" ? -(Math.floor(Math.random() * 90) + 35) :
+        -(Math.floor(Math.random() * 34) + 8);
+
+      const newToday = Math.max(80, Math.round(lastToday + wave + jitter + statusImpact));
+
+      const yesterdayWave = Math.sin(Date.now() / 4200) * 14;
+      const yesterdayJitter = Math.floor(Math.random() * 31) - 15;
+      const newYesterday = Math.max(80, Math.round(lastYesterday + yesterdayWave + yesterdayJitter));
+
+      chartHourly.data.labels.push(label);
+      successData.push(newToday);
+      yesterdayData.push(newYesterday);
+
+      // keep window clean
+      if (chartHourly.data.labels.length > 25) {
+        chartHourly.data.labels.shift();
+        successData.shift();
+        yesterdayData.shift();
+      }
+
+      chartHourly.update();
+    }
+    scheduleNextTraffic();
+  }
+
+  function scheduleNextTraffic() {
+    const nextDelay = Math.floor(Math.random() * 6500) + 3500; // 3.5s - 10s
+    setTimeout(pushIncomingTraffic, nextDelay);
+  }
+
+  scheduleNextTraffic();
+}
