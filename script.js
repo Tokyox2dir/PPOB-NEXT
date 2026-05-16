@@ -407,6 +407,15 @@ function getSupplierName(row) {
   return row.supplier.replace("[", "").replace("]", "");
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function getRowDate(row) {
   return new Date(`2026-05-15T${row.time}`);
 }
@@ -995,6 +1004,112 @@ function switchAlertTab(tab, btn) {
   panel.style.display = "flex";
 }
 
+function getTransactionDetail(row) {
+  const account = getClientName(row);
+  const supplier = getSupplierName(row);
+  const requestMs = 120 + (parseInt(row.id.slice(-2), 10) % 80);
+  const responseMs = requestMs + Math.round(parseFloat(row.dur || "0") * 1000);
+  const callbackMs = responseMs + (row.status === "Pending" ? 0 : 3800 + (parseInt(row.id.slice(-3), 10) % 700));
+  const baseDate = `16-05-2026 ${row.time}`;
+  const rcMap = { Success: "0", Reversed: "5", Pending: "68", Failed: "91", Processing: "2" };
+  const statusCodeMap = { Success: "0", Reversed: "5", Pending: "68", Failed: "91", Processing: "2" };
+  const gatewayCode = row.product === "DANAKH" ? "DANAOPEN" : row.product;
+  const clientTrxId = row.client.includes("bkpay")
+    ? `D17789${row.id}${row.dest.slice(-6)}`
+    : `${row.id}${row.dest.slice(-4)}`;
+  const serial = row.status === "Success" ? `${row.id}${row.dest.slice(-8)}${row.product}` : "";
+  const statusCode = statusCodeMap[row.status] || "2";
+  const gatewayMessage = row.status === "Success"
+    ? `REF#${row.id} ${gatewayCode} ${row.dest} BERHASIL, SN:${serial || "-"}`
+    : row.status === "Reversed"
+      ? `REF#${row.id} ${gatewayCode} ${row.dest} GAGAL, KET: ${row.reason.toUpperCase()}`
+      : `REF#${row.id} ${gatewayCode} ${row.dest} ${row.reason.toUpperCase()}`;
+
+  return {
+    account,
+    dateTime: `${baseDate}.${String(requestMs).padStart(3, "0")}`,
+    responseTime: `${baseDate}.${String(responseMs % 1000).padStart(3, "0")}`,
+    callbackTime: row.status === "Pending" ? "-" : `${baseDate}.${String(callbackMs % 1000).padStart(3, "0")}`,
+    timeTaken: Number(row.dur || 0).toFixed(3),
+    sysId: row.id,
+    clientTrxId,
+    status: row.status,
+    rcNum: rcMap[row.status] || "2",
+    destination: row.dest,
+    code: row.product,
+    gateway: supplier,
+    gatewayCode,
+    serial,
+    responseGateway: `Query(${supplier}Query { serverid: "${row.id}", clientid: ${row.id}, statuscode: "${statusCode}", tujuan: Some("${row.dest}"), harga: Some("${row.price}"), saldo: None, kp: Some("${gatewayCode}"), msisdn: Some("${row.dest}"), sn: Some("${serial}"), msg: "${gatewayMessage}" })`,
+    reversalNote: row.status === "Reversed" ? row.reason : "",
+    reversedBy: row.status === "Reversed" ? "H2H" : "",
+    reversalDateTime: row.status === "Reversed" ? `${baseDate}.${String((callbackMs + 120) % 1000).padStart(3, "0")}` : "",
+  };
+}
+
+function detailRow(label, value, extraClass = "") {
+  return `<tr><th>${escapeHtml(label)} :</th><td class="${extraClass}">${escapeHtml(value || "-")}</td></tr>`;
+}
+
+function openTransactionDetail(id) {
+  const row = RAW.find((trx) => trx.id === id);
+  if (!row) return;
+
+  const detail = getTransactionDetail(row);
+  const modal = document.getElementById("trx-modal");
+  const title = document.getElementById("trx-modal-title");
+  const body = document.getElementById("trx-modal-body");
+  if (!modal || !title || !body) return;
+
+  title.textContent = `Sys TRX ID ${detail.sysId}`;
+  body.innerHTML = `
+    <table class="trx-detail-table">
+      <tbody>
+        ${detailRow("Account", detail.account)}
+        ${detailRow("Date Time", detail.dateTime)}
+        ${detailRow("Response Time", detail.responseTime)}
+        ${detailRow("Callback / Status Time", detail.callbackTime)}
+        ${detailRow("Time Taken (s)", detail.timeTaken)}
+        ${detailRow("Sys_Trx ID", detail.sysId)}
+        ${detailRow("Client_Trx ID", detail.clientTrxId)}
+        ${detailRow("Status", detail.status)}
+        ${detailRow("RC Num", detail.rcNum)}
+        ${detailRow("Destination", detail.destination)}
+        ${detailRow("Code", detail.code)}
+        ${detailRow("Gateway", detail.gateway)}
+        ${detailRow("Gateway Code", detail.gatewayCode)}
+        ${detailRow("Serial Number", detail.serial)}
+        ${detailRow("Response / Callback Gateway", detail.responseGateway, "detail-long")}
+        ${detailRow("Reversal Note", detail.reversalNote)}
+        ${detailRow("Reversed By", detail.reversedBy)}
+        ${detailRow("Reversal DateTime", detail.reversalDateTime)}
+      </tbody>
+    </table>
+    <div class="trx-detail-actions">
+      <h3>Update Transaction Status to Success</h3>
+      <div class="trx-detail-form">
+        <label for="detail-sn">Serial Number (SN) :</label>
+        <input id="detail-sn" type="text" placeholder="Isi Serial Number" value="${escapeHtml(detail.serial)}">
+        <button class="trx-detail-success" type="button">Success</button>
+      </div>
+    </div>
+  `;
+  modal.classList.add("active");
+  document.body.classList.add("modal-open");
+}
+
+function closeTransactionDetail(event) {
+  if (event && event.target.id !== "trx-modal") return;
+  const modal = document.getElementById("trx-modal");
+  if (!modal) return;
+  modal.classList.remove("active");
+  document.body.classList.remove("modal-open");
+}
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeTransactionDetail();
+});
+
 // Render transaction table
 function renderTrx() {
   const tbody = document.getElementById("trx-tbody");
@@ -1019,7 +1134,7 @@ function renderTrx() {
       const rowClass = stcls === "pending" ? "trx-row-pending" : "";
       return `<tr class="${rowClass}">
       <td><span class="row-number">${start + i + 1}</span></td>
-      <td><span class="trx-id">${r.id}</span></td>
+      <td><button class="trx-id trx-id-btn" type="button" onclick="openTransactionDetail('${r.id}')">${r.id}</button></td>
       <td><span class="client-tag">${clientShort}</span></td>
       <td><span class="sup-badge">${r.supplier.replace("[", "").replace("]", "")}</span></td>
       <td><span class="mono-sm" style="color:var(--accent2);">${r.product}</span></td>
