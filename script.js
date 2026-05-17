@@ -175,6 +175,8 @@ let filterState = { ...DEFAULT_FILTERS };
 
 const CLIENT_STOP_NORMAL_MIN = 15;
 const CLIENT_STOP_IDLE_MS = 30 * 60 * 1000;
+const CLIENT_INFO_DROP_NORMAL_MIN = 10;
+const CLIENT_INFO_DROP_IDLE_MS = 10 * 60 * 1000;
 const CLIENT_STOP_DEMO_INTERVAL_MS = 10 * 1000;
 const CLIENT_STOP_DEMO_VISIBLE_MS = 5 * 1000;
 const CLIENT_STOP_DEMO_MAX_ROWS = 30;
@@ -185,7 +187,7 @@ const LOSS_TRX_DEMO_MAX_ROWS = 30;
 const STATUS_INCIDENT_THRESHOLD = 5;
 const STATUS_INCIDENT_HOLD_MS = 5 * 60 * 1000;
 const DEMO_PENDING_INTERVAL_MS = 5000;
-const DEMO_PENDING_RESOLVE_MS = 2000;
+const DEMO_PENDING_RESOLVE_MS = 5000;
 const LIVE_PENDING = new Map();
 const STATUS_INCIDENT_STATE = {
   Failed: { since: null, alerted: false },
@@ -434,6 +436,11 @@ function getProviderName(row) {
 function matchesSearch(value, query) {
   if (!query) return true;
   return String(value).toLowerCase().includes(String(query).toLowerCase());
+}
+
+function getClientPrimaryProduct(clientName) {
+  const row = RAW.find((trx) => getClientName(trx).toLowerCase() === clientName.toLowerCase());
+  return row?.product || "All Products";
 }
 
 function escapeHtml(value) {
@@ -806,9 +813,10 @@ function removeStatusIncident(status) {
 
 // Render alert: client stop
 function renderAlertStop() {
+  syncClientInfoTrafficDropAlerts();
   const tbody = document.getElementById("alert-stop-tbody");
   if (!ALERTS_STOP.length) {
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text3); padding:20px 0; font-size:12px;">No client stop detected</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text3); padding:20px 0; font-size:12px;">No client info detected</td></tr>`;
     return;
   }
   tbody.innerHTML = ALERTS_STOP.map(
@@ -921,6 +929,7 @@ function renderAllAlerts() {
 }
 
 function updateAlertBadges() {
+  syncClientInfoTrafficDropAlerts();
   const balanceAlerts = getLowBalanceAlerts();
   const criticalCount = ALERTS_PRODUCT.filter((a) => a.level === "critical").length + ALERTS_STOP.length + balanceAlerts.filter((a) => a.level === "critical").length;
   const warnCount = ALERTS_PRODUCT.filter((a) => a.level === "warn").length + ALERTS_RUGI.length + balanceAlerts.filter((a) => a.level === "warn").length;
@@ -958,6 +967,34 @@ function upsertClientStopAlert(alert) {
   const exists = ALERTS_STOP.findIndex((a) => a.client.split(" ")[0] === clientKey);
   if (exists >= 0) ALERTS_STOP.splice(exists, 1);
   ALERTS_STOP.unshift(alert);
+  limitAlertRows(ALERTS_STOP, CLIENT_STOP_DEMO_MAX_ROWS);
+}
+
+function syncClientInfoTrafficDropAlerts() {
+  for (let index = ALERTS_STOP.length - 1; index >= 0; index--) {
+    if (ALERTS_STOP[index].systemKey?.startsWith("traffic-drop-")) ALERTS_STOP.splice(index, 1);
+  }
+
+  const nowMs = Date.now();
+  const dropAlerts = TRAFFIC
+    .filter((row) => row.normal30mTraffic > CLIENT_INFO_DROP_NORMAL_MIN)
+    .map((row) => {
+      const idleMs = nowMs - row.lastTrafficAt;
+      const idleMinutes = Math.floor(idleMs / 60000);
+      const isDropped = idleMs >= CLIENT_INFO_DROP_IDLE_MS;
+      if (!isDropped) return null;
+
+      return {
+        client: `${row.client} [Auto]`,
+        product: getClientPrimaryProduct(row.client),
+        detail: `Traffic dropped to 0 for ${Math.max(idleMinutes, 1)} minutes, normally ${row.normal30mTraffic} trx / 30 minutes`,
+        since: shortTime(new Date(row.lastTrafficAt)),
+        systemKey: `traffic-drop-${row.client.toLowerCase()}`,
+      };
+    })
+    .filter(Boolean);
+
+  ALERTS_STOP.unshift(...dropAlerts);
   limitAlertRows(ALERTS_STOP, CLIENT_STOP_DEMO_MAX_ROWS);
 }
 
@@ -1611,6 +1648,7 @@ function buildFakeTransaction(statusOverride) {
   const products = ["iPLN", "DANAKH", "TSEL50", "I10", "S25", "iBPJSTK"];
   const statuses = ["Success", "Success", "Success", "Success", "Success", "Reversed", "Failed", "Processing"];
   const status = statusOverride || rand(statuses);
+  const resolveStatus = status === "Pending" ? (Math.random() > 0.82 ? "Reversed" : "Success") : null;
   const product = rand(products);
   const supplier = rand(suppliers);
   const client = rand(clients);
@@ -1656,6 +1694,7 @@ function buildFakeTransaction(statusOverride) {
     margin: formatMoney(marginValue),
     reason,
     status,
+    resolveStatus,
   };
 }
 
@@ -1669,7 +1708,7 @@ function ingestTransaction(newTrx) {
 
   const clientName = newTrx.client.split(" ")[0];
   const t = TRAFFIC.find((row) => row.client === clientName) || rand(TRAFFIC);
-  const burst = Math.floor(Math.random() * 24) + 7;
+  const burst = Math.floor(Math.random() * 41) + 10;
   t.lastTrafficAt = Date.now();
 
   if (newTrx.status === "Success") {
@@ -1680,13 +1719,13 @@ function ingestTransaction(newTrx) {
     t.today = Math.max(0, t.today - drop);
     t.lastTick = -drop;
   } else {
-    const pendingBump = Math.floor(Math.random() * 5) + 1;
+    const pendingBump = Math.floor(Math.random() * 26) + 5;
     t.today += pendingBump;
     t.lastTick = pendingBump;
   }
 
   TRAFFIC.forEach((row) => {
-    if (row !== t && Math.random() > 0.72) row.today += Math.floor(Math.random() * 4);
+    if (row !== t && Math.random() > 0.72) row.today += Math.floor(Math.random() * 12) + 1;
   });
 
   renderTraffic();
@@ -1762,10 +1801,11 @@ function resolvePendingTransaction(id) {
   LIVE_PENDING.delete(id);
 
   if (trx) {
-    const resolvedAsReversed = Math.random() > 0.82;
+    const resolvedAsReversed = (trx.resolveStatus || "Success") === "Reversed";
     trx.status = resolvedAsReversed ? "Reversed" : "Success";
     trx.dur = resolvedAsReversed ? (Math.random() * 2 + 1).toFixed(3) : (Math.random() * 0.45 + 0.08).toFixed(3);
     trx.reason = resolvedAsReversed ? "Supplier timeout" : "Transaction successful";
+    delete trx.resolveStatus;
     addTransactionToFinance(trx);
   }
 
@@ -1782,7 +1822,7 @@ function simulateLiveTraffic() {
       return;
     }
 
-    ingestTransaction(buildFakeTransaction());
+    ingestTransaction(buildFakeTransaction("Pending"));
     scheduleNextTraffic();
   }
 
