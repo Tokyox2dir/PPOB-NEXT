@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TRX Monitor - Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,300&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=21">
+  <link rel="stylesheet" href="style.css?v=22">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   </head>
   <body>
@@ -78,10 +78,13 @@
         <div class="filter-bar fade-in fixed-elem">
           <div class="filter-group"><div class="filter-label">Start Date</div><input id="filter-start" class="filter-input date-input" type="datetime-local" value="2026-05-15T00:00"></div>
           <div class="filter-group"><div class="filter-label">End Date</div><input id="filter-end" class="filter-input date-input" type="datetime-local" value="2026-05-15T23:59"></div>
-          <div class="filter-group"><div class="filter-label">Client</div><select id="filter-client" class="filter-input"><option value="">All Clients</option></select></div>
-          <div class="filter-group"><div class="filter-label">Supplier</div><select id="filter-supplier" class="filter-input"><option value="">All Suppliers</option></select></div>
-          <div class="filter-group"><div class="filter-label">Product</div><select id="filter-product" class="filter-input"><option value="">All Products</option></select></div>
-          <div class="filter-group"><div class="filter-label">Status</div><select id="filter-status" class="filter-input"><option value="">All Statuses</option></select></div>
+          <div class="filter-group"><div class="filter-label">Account</div><div class="filter-combo" data-placeholder="All Accounts"><input id="filter-client" type="hidden"><button type="button" class="filter-input filter-combo-toggle" onclick="toggleFilterCombo(this)"><span>All Accounts</span></button><div class="filter-combo-menu"><input class="filter-combo-search" type="search" placeholder="Search account..." oninput="filterComboOptions(this)"><div class="filter-combo-options" id="client-options"></div></div></div></div>
+          <div class="filter-group"><div class="filter-label">Client ID</div><input id="filter-client-id" class="filter-input search-input" type="search" placeholder="Search client ID"></div>
+          <div class="filter-group"><div class="filter-label">Gateway</div><div class="filter-combo" data-placeholder="All Gateways"><input id="filter-supplier" type="hidden"><button type="button" class="filter-input filter-combo-toggle" onclick="toggleFilterCombo(this)"><span>All Gateways</span></button><div class="filter-combo-menu"><input class="filter-combo-search" type="search" placeholder="Search gateway..." oninput="filterComboOptions(this)"><div class="filter-combo-options" id="supplier-options"></div></div></div></div>
+          <div class="filter-group"><div class="filter-label">Supplier ID</div><input id="filter-supplier-id" class="filter-input search-input" type="search" placeholder="Search supplier ID"></div>
+          <div class="filter-group"><div class="filter-label">Provider</div><div class="filter-combo" data-placeholder="All Providers"><input id="filter-provider" type="hidden"><button type="button" class="filter-input filter-combo-toggle" onclick="toggleFilterCombo(this)"><span>All Providers</span></button><div class="filter-combo-menu"><input class="filter-combo-search" type="search" placeholder="Search provider..." oninput="filterComboOptions(this)"><div class="filter-combo-options" id="provider-options"></div></div></div></div>
+          <div class="filter-group"><div class="filter-label">Product/Service</div><input id="filter-product" class="filter-input search-input" type="search" placeholder="Search product"></div>
+          <div class="filter-group"><div class="filter-label">Status</div><div class="filter-combo" data-placeholder="All Statuses"><input id="filter-status" type="hidden"><button type="button" class="filter-input filter-combo-toggle" onclick="toggleFilterCombo(this)"><span>All Statuses</span></button><div class="filter-combo-menu"><input class="filter-combo-search" type="search" placeholder="Search status..." oninput="filterComboOptions(this)"><div class="filter-combo-options" id="status-options"></div></div></div></div>
           <div class="filter-actions">
             <button class="btn btn-primary" onclick="applyDashboardFilters()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Search</button>
             <button class="btn btn-ghost" onclick="resetDashboardFilters()">Reset</button>
@@ -269,6 +272,6 @@
     </div>
   </div>
 
-  <script src="script.js?v=21"></script>
+  <script src="script.js?v=22"></script>
   </body>
   </html>

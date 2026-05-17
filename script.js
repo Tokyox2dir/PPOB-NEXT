@@ -164,7 +164,10 @@ const DEFAULT_FILTERS = {
   start: "2026-05-15T00:00",
   end: "2026-05-15T23:59",
   client: "",
+  clientId: "",
   supplier: "",
+  supplierId: "",
+  provider: "",
   product: "",
   status: "",
 };
@@ -407,6 +410,32 @@ function getSupplierName(row) {
   return row.supplier.replace("[", "").replace("]", "");
 }
 
+function getClientTrxId(row) {
+  return row.client.includes("bkpay")
+    ? `D17789${row.id}${row.dest.slice(-6)}`
+    : `${row.id}${row.dest.slice(-4)}`;
+}
+
+function getSupplierId(row) {
+  const supplier = getSupplierName(row).toUpperCase().replace(/\s+/g, "-");
+  return `${supplier}-${row.product}`;
+}
+
+function getProviderName(row) {
+  const product = row.product.toUpperCase();
+  if (product.includes("PLN")) return "PLN";
+  if (product.includes("TSEL") || product.startsWith("S")) return "Telkomsel";
+  if (product.includes("DANA")) return "Dana";
+  if (product.includes("I10")) return "Indosat";
+  if (product.includes("BPJS")) return "BPJS";
+  return row.product;
+}
+
+function matchesSearch(value, query) {
+  if (!query) return true;
+  return String(value).toLowerCase().includes(String(query).toLowerCase());
+}
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -432,10 +461,13 @@ function getFilteredRows() {
     const rowDate = getRowDate(row);
     if (start && rowDate < start) return false;
     if (end && rowDate > end) return false;
-    if (filterState.client && getClientName(row) !== filterState.client) return false;
-    if (filterState.supplier && getSupplierName(row) !== filterState.supplier) return false;
-    if (filterState.product && row.product !== filterState.product) return false;
-    if (filterState.status && row.status !== filterState.status) return false;
+    if (!matchesSearch(getClientName(row), filterState.client)) return false;
+    if (!matchesSearch(getClientTrxId(row), filterState.clientId)) return false;
+    if (!matchesSearch(getSupplierName(row), filterState.supplier)) return false;
+    if (!matchesSearch(getSupplierId(row), filterState.supplierId)) return false;
+    if (!matchesSearch(getProviderName(row), filterState.provider)) return false;
+    if (!matchesSearch(row.product, filterState.product)) return false;
+    if (!matchesSearch(row.status, filterState.status)) return false;
     return true;
   });
 }
@@ -450,17 +482,89 @@ function getFilteredTotalCount(rows = getFilteredRows()) {
 }
 
 function populateFilterOptions() {
-  fillSelect("filter-client", "All Clients", [...new Set(RAW.map(getClientName))]);
-  fillSelect("filter-supplier", "All Suppliers", [...new Set(RAW.map(getSupplierName))]);
-  fillSelect("filter-product", "All Products", [...new Set(RAW.map((row) => row.product))]);
-  fillSelect("filter-status", "All Statuses", [...new Set(RAW.map((row) => row.status))]);
+  fillComboOptions("client-options", [...new Set(RAW.map(getClientName))]);
+  fillComboOptions("supplier-options", [...new Set(RAW.map(getSupplierName))]);
+  fillComboOptions("provider-options", [...new Set(RAW.map(getProviderName))]);
+  fillComboOptions("status-options", [...new Set(RAW.map((row) => row.status))]);
   syncFilterInputs();
 }
 
-function fillSelect(id, label, values) {
-  const select = document.getElementById(id);
-  if (!select) return;
-  select.innerHTML = [`<option value="">${label}</option>`, ...values.sort().map((value) => `<option value="${value}">${value}</option>`)].join("");
+function fillComboOptions(id, values) {
+  const options = document.getElementById(id);
+  if (!options) return;
+  const sorted = values.filter(Boolean).sort();
+  options.dataset.values = JSON.stringify(sorted);
+  renderComboOptions(options, sorted);
+}
+
+function getComboValues(options) {
+  try {
+    return JSON.parse(options.dataset.values || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function renderComboOptions(options, values, query = "") {
+  const combo = options.closest(".filter-combo");
+  const selected = combo?.querySelector("input[type='hidden']")?.value || "";
+  const placeholder = combo?.dataset.placeholder || "All";
+  const filtered = values.filter((value) => matchesSearch(value, query));
+  const rows = [`<button type="button" class="filter-combo-option${selected ? "" : " active"}" data-value="" onclick="selectFilterOption(this)">${escapeHtml(placeholder)}</button>`];
+
+  if (filtered.length) {
+    rows.push(...filtered.map((value) => {
+      const active = value === selected ? " active" : "";
+      return `<button type="button" class="filter-combo-option${active}" data-value="${escapeHtml(value)}" onclick="selectFilterOption(this)">${escapeHtml(value)}</button>`;
+    }));
+  } else {
+    rows.push(`<div class="filter-combo-empty">No results</div>`);
+  }
+
+  options.innerHTML = rows.join("");
+}
+
+function toggleFilterCombo(toggle) {
+  const combo = toggle.closest(".filter-combo");
+  const willOpen = !combo.classList.contains("open");
+  closeFilterCombos();
+  if (!willOpen) return;
+
+  combo.classList.add("open");
+  const search = combo.querySelector(".filter-combo-search");
+  const options = combo.querySelector(".filter-combo-options");
+  if (search) {
+    search.value = "";
+    setTimeout(() => search.focus(), 0);
+  }
+  if (options) renderComboOptions(options, getComboValues(options));
+}
+
+function filterComboOptions(search) {
+  const combo = search.closest(".filter-combo");
+  const options = combo?.querySelector(".filter-combo-options");
+  if (!options) return;
+  renderComboOptions(options, getComboValues(options), search.value);
+}
+
+function selectFilterOption(option) {
+  const combo = option.closest(".filter-combo");
+  const field = combo?.querySelector("input[type='hidden']");
+  if (!combo || !field) return;
+  field.value = option.dataset.value || "";
+  updateComboLabel(combo);
+  closeFilterCombos();
+}
+
+function updateComboLabel(combo) {
+  const field = combo.querySelector("input[type='hidden']");
+  const label = combo.querySelector(".filter-combo-toggle span");
+  if (!field || !label) return;
+  label.textContent = field.value || combo.dataset.placeholder || "All";
+}
+
+function closeFilterCombos() {
+  document.querySelectorAll(".filter-combo.open").forEach((combo) => combo.classList.remove("open"));
 }
 
 function syncFilterInputs() {
@@ -468,7 +572,10 @@ function syncFilterInputs() {
     "filter-start": filterState.start,
     "filter-end": filterState.end,
     "filter-client": filterState.client,
+    "filter-client-id": filterState.clientId,
     "filter-supplier": filterState.supplier,
+    "filter-supplier-id": filterState.supplierId,
+    "filter-provider": filterState.provider,
     "filter-product": filterState.product,
     "filter-status": filterState.status,
   };
@@ -477,16 +584,20 @@ function syncFilterInputs() {
     const field = document.getElementById(id);
     if (field) field.value = value;
   });
+  document.querySelectorAll(".filter-combo").forEach(updateComboLabel);
 }
 
 function readFilterInputs() {
   filterState = {
     start: document.getElementById("filter-start")?.value || "",
     end: document.getElementById("filter-end")?.value || "",
-    client: document.getElementById("filter-client")?.value || "",
-    supplier: document.getElementById("filter-supplier")?.value || "",
-    product: document.getElementById("filter-product")?.value || "",
-    status: document.getElementById("filter-status")?.value || "",
+    client: document.getElementById("filter-client")?.value.trim() || "",
+    clientId: document.getElementById("filter-client-id")?.value.trim() || "",
+    supplier: document.getElementById("filter-supplier")?.value.trim() || "",
+    supplierId: document.getElementById("filter-supplier-id")?.value.trim() || "",
+    provider: document.getElementById("filter-provider")?.value.trim() || "",
+    product: document.getElementById("filter-product")?.value.trim() || "",
+    status: document.getElementById("filter-status")?.value.trim() || "",
   };
 }
 
@@ -1014,9 +1125,7 @@ function getTransactionDetail(row) {
   const rcMap = { Success: "0", Reversed: "5", Pending: "68", Failed: "91", Processing: "2" };
   const statusCodeMap = { Success: "0", Reversed: "5", Pending: "68", Failed: "91", Processing: "2" };
   const gatewayCode = row.product === "DANAKH" ? "DANAOPEN" : row.product;
-  const clientTrxId = row.client.includes("bkpay")
-    ? `D17789${row.id}${row.dest.slice(-6)}`
-    : `${row.id}${row.dest.slice(-4)}`;
+  const clientTrxId = getClientTrxId(row);
   const serial = row.status === "Success" ? `${row.id}${row.dest.slice(-8)}${row.product}` : "";
   const statusCode = statusCodeMap[row.status] || "2";
   const gatewayMessage = row.status === "Success"
@@ -1108,6 +1217,11 @@ function closeTransactionDetail(event) {
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") closeTransactionDetail();
+  if (event.key === "Escape") closeFilterCombos();
+});
+
+document.addEventListener("click", (event) => {
+  if (!event.target.closest(".filter-combo")) closeFilterCombos();
 });
 
 // Render transaction table
