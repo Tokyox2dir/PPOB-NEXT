@@ -1533,6 +1533,20 @@ function toggleTheme() {
   updateChartColors();
 }
 
+function toggleSidebar() {
+  document.body.classList.toggle("sidebar-hidden");
+  const hidden = document.body.classList.contains("sidebar-hidden");
+  const button = document.querySelector(".sidebar-toggle");
+  if (button) {
+    button.title = hidden ? "Show sidebar" : "Hide sidebar";
+    button.setAttribute("aria-label", hidden ? "Show sidebar" : "Hide sidebar");
+  }
+  setTimeout(() => {
+    if (chartHourly) chartHourly.resize();
+    if (chartDonut) chartDonut.resize();
+  }, 220);
+}
+
 function refreshData() {
   const btn = document.querySelector(".btn-ghost");
   btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 0.7s linear infinite;"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg> Refreshing...`;
