@@ -384,23 +384,66 @@ const initialMonitorTraffic = [
   { client: "ESA", today: 240, yesterday: 315, lastTick: 0 },
 ];
 
-const monitorBalance = [
+const initialMonitorBalance = [
   ["WARN", "Toplink", "Gateway", "80.4M", "100M", "warn"],
   ["CRIT", "Telin", "Gateway", "96.3M", "150M", "critical"],
+  ["WARN", "Kisel ApiHub", "Gateway", "42.8M", "60M", "warn"],
+  ["WARN", "Bukalapak", "Client", "58.2M", "80M", "warn"],
+  ["CRIT", "Dana", "Client", "27.5M", "50M", "critical"],
+  ["WARN", "ShopeePay", "Client", "45.5M", "65M", "warn"],
+  ["WARN", "Indotel", "Gateway", "88.5M", "100M", "warn"],
 ];
 
-const monitorAlerts = {
+const initialMonitorAlerts = {
   stop: [
     ["Telin", "S100", "Stop transaksi mendadak", "17:02"],
     ["BK PAY", "DANAOPEN", "Callback terlambat", "17:11"],
     ["SMB", "PLN20", "Spike reversal", "17:14"],
+    ["Bukalapak", "S50", "No new traffic 32 minutes", "17:16"],
+    ["Tokopedia", "DANAKH", "Traffic dropped to 0", "17:18"],
+    ["ShopeePay", "PLN", "No request after normal pattern", "17:19"],
   ],
   product: [
     ["critical", "iPLN / VSI", "Supplier callback: product close", "17:08"],
     ["warn", "DANAKH / SMB", "RC 68 exceeded threshold", "17:13"],
+    ["critical", "S50 / Kisel ApiHub", "Supplier maintenance callback", "17:15"],
+    ["warn", "I10 / Indotel", "RC 91 crossed route threshold", "17:17"],
+    ["warn", "PLN / VSI", "RC 96 repeated on inquiry", "17:20"],
   ],
-  rugi: [["SYS-260602-8834", "HIGO", "GMS50", "Rp300", "17:14"]],
+  rugi: [
+    ["SYS-260602-8834", "HIGO", "GMS50", "Rp300", "17:14"],
+    ["SYS-260602-8828", "BK PAY", "DANAKH", "Rp1.200", "17:16"],
+    ["SYS-260602-8819", "Bukalapak", "S50", "Rp350", "17:18"],
+    ["SYS-260602-8808", "Dana", "I10", "Rp275", "17:20"],
+  ],
 };
+
+const alertPools = {
+  stop: [
+    ["Traveloka", "iPLN", "No payment request after inquiry traffic"],
+    ["Blibli", "PLN", "Callback traffic stopped"],
+    ["MitraPay", "I10", "No request received after busy route"],
+    ["Fastpay", "S25", "Monitoring detected idle route"],
+    ["OVO", "DANAKH", "Traffic dropped below normal"],
+  ],
+  product: [
+    ["critical", "DANA50 / SMB", "Callback product unavailable"],
+    ["warn", "OVO25 / Bima Sakti", "RC 91 crossed route threshold"],
+    ["critical", "PLNPOST / VSI", "Inquiry route timeout spike"],
+    ["warn", "BPJSKES / Indotel", "RC 96 repeated in payment route"],
+  ],
+  rugi: [
+    ["SYS-260602-8798", "Traveloka", "iPLN", "Rp650"],
+    ["SYS-260602-8786", "Fastpay", "S25", "Rp425"],
+    ["SYS-260602-8772", "MitraPay", "PLN", "Rp900"],
+    ["SYS-260602-8763", "Blibli", "TSEL50", "Rp700"],
+  ],
+};
+
+function monitorTime(offsetMinutes = 0) {
+  const date = new Date(Date.now() - offsetMinutes * 60 * 1000);
+  return date.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", hour12: false });
+}
 
 function FilterCombo({ label, placeholder, options, value, onChange }) {
   const [open, setOpen] = useState(false);
@@ -455,6 +498,8 @@ function CurrentTransactionPage() {
   const [filters, setFilters] = useState({ account: "", gateway: "", provider: "", status: "", clientId: "", supplierId: "", product: "" });
   const [activeAlert, setActiveAlert] = useState("stop");
   const [trafficRows, setTrafficRows] = useState(initialMonitorTraffic);
+  const [balanceRows, setBalanceRows] = useState(initialMonitorBalance);
+  const [alertRows, setAlertRows] = useState(initialMonitorAlerts);
   useEffect(() => {
     const timer = setInterval(() => {
       setTrafficRows((current) => {
@@ -467,6 +512,30 @@ function CurrentTransactionPage() {
     }, 2200);
     return () => clearInterval(timer);
   }, []);
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setBalanceRows((current) => current.map((row, index) => {
+        const value = Number.parseFloat(row[3]);
+        const nextValue = Math.max(12, value - (index % 3 === 0 ? Math.random() * 0.9 : Math.random() * 0.25));
+        const threshold = Number.parseFloat(row[4]);
+        const level = nextValue <= threshold * 0.55 ? "critical" : "warn";
+        return [level === "critical" ? "CRIT" : "WARN", row[1], row[2], `${nextValue.toFixed(1)}M`, row[4], level];
+      }));
+      setAlertRows((current) => {
+        const stop = alertPools.stop[Math.floor(Math.random() * alertPools.stop.length)];
+        const product = alertPools.product[Math.floor(Math.random() * alertPools.product.length)];
+        const rugi = alertPools.rugi[Math.floor(Math.random() * alertPools.rugi.length)];
+        return {
+          stop: [[stop[0], stop[1], stop[2], monitorTime(Math.floor(Math.random() * 12) + 1)], ...current.stop].slice(0, 8),
+          product: [[product[0], product[1], product[2], monitorTime(Math.floor(Math.random() * 12) + 1)], ...current.product].slice(0, 8),
+          rugi: [[rugi[0], rugi[1], rugi[2], rugi[3], monitorTime(Math.floor(Math.random() * 12) + 1)], ...current.rugi].slice(0, 8),
+        };
+      });
+    }, 7000);
+    return () => clearInterval(timer);
+  }, []);
+  const criticalAlertCount = alertRows.stop.length + alertRows.product.filter((row) => row[0] === "critical").length + balanceRows.filter((row) => row[5] === "critical").length;
+  const warnAlertCount = alertRows.rugi.length + alertRows.product.filter((row) => row[0] === "warn").length + balanceRows.filter((row) => row[5] === "warn").length;
   const pendingCount = monitorRows.filter((row) => row[10] === "Pending").length;
   const rows = monitorRows.filter((row) => {
     if (filters.account && row[1] !== filters.account) return false;
@@ -623,12 +692,12 @@ function CurrentTransactionPage() {
           </div>
 
           <div className="card fade-in fixed-elem balance-card">
-            <div className="card-header"><div className="card-title">Balance Monitor</div><span className="alert-count-badge warn">2 low</span></div>
+            <div className="card-header"><div className="card-title">Balance Monitor</div><span className="alert-count-badge warn">{balanceRows.length} low</span></div>
             <div className="table-wrap balance-scroll">
               <table className="alert-table balance-table">
                 <thead><tr><th>Level</th><th>Account</th><th>Type</th><th>Balance</th><th>Threshold</th></tr></thead>
                 <tbody>
-                  {monitorBalance.map((row) => (
+                  {balanceRows.map((row) => (
                     <tr key={row[1]}>
                       <td><span className={`alert-badge ${row[5]}`}>{row[0]}</span></td>
                       <td><span className="balance-account">{row[1]}</span></td>
@@ -646,19 +715,19 @@ function CurrentTransactionPage() {
             <div className="card-header fixed-elem alert-header">
               <div className="alert-header-top">
                 <div className="card-title">Alert Monitor</div>
-                <div style={{ display: "flex", gap: 5 }}><span className="alert-count-badge danger">2 critical</span><span className="alert-count-badge warn">3 warn</span></div>
+                <div style={{ display: "flex", gap: 5 }}><span className="alert-count-badge danger">{criticalAlertCount} critical</span><span className="alert-count-badge warn">{warnAlertCount} warn</span></div>
               </div>
               <div className="alert-tabs">
-                <button className={`alert-tab ${activeAlert === "stop" ? "active" : ""}`} type="button" onClick={() => setActiveAlert("stop")}>Client Info <span className="tab-badge" style={{ background: "var(--danger-bg)", color: "var(--danger)" }}>2</span></button>
-                <button className={`alert-tab ${activeAlert === "product" ? "active" : ""}`} type="button" onClick={() => setActiveAlert("product")}>Incidents <span className="tab-badge" style={{ background: "var(--warn-bg)", color: "var(--warn)" }}>2</span></button>
-                <button className={`alert-tab ${activeAlert === "rugi" ? "active" : ""}`} type="button" onClick={() => setActiveAlert("rugi")}>Loss Trx <span className="tab-badge" style={{ background: "var(--pending-bg)", color: "var(--pending)" }}>1</span></button>
+                <button className={`alert-tab ${activeAlert === "stop" ? "active" : ""}`} type="button" onClick={() => setActiveAlert("stop")}>Client Info <span className="tab-badge" style={{ background: "var(--danger-bg)", color: "var(--danger)" }}>{alertRows.stop.length}</span></button>
+                <button className={`alert-tab ${activeAlert === "product" ? "active" : ""}`} type="button" onClick={() => setActiveAlert("product")}>Incidents <span className="tab-badge" style={{ background: "var(--warn-bg)", color: "var(--warn)" }}>{alertRows.product.length}</span></button>
+                <button className={`alert-tab ${activeAlert === "rugi" ? "active" : ""}`} type="button" onClick={() => setActiveAlert("rugi")}>Loss Trx <span className="tab-badge" style={{ background: "var(--pending-bg)", color: "var(--pending)" }}>{alertRows.rugi.length}</span></button>
               </div>
             </div>
             <div className={`alert-panel ${activeAlert === "stop" ? "active" : ""} scrollable flex-fill alert-scroll`}>
               <table className="alert-table">
                 <thead><tr><th>Client</th><th>Product</th><th>Detail</th><th>Since</th></tr></thead>
                 <tbody>
-                  {monitorAlerts.stop.map((row) => <tr key={row.join("-")}>{row.map((cell) => <td key={cell}>{cell}</td>)}</tr>)}
+                  {alertRows.stop.map((row) => <tr key={row.join("-")}>{row.map((cell) => <td key={cell}>{cell}</td>)}</tr>)}
                 </tbody>
               </table>
             </div>
@@ -666,7 +735,7 @@ function CurrentTransactionPage() {
               <table className="alert-table">
                 <thead><tr><th>Level</th><th>Product / Supplier</th><th>Description</th><th>Time</th></tr></thead>
                 <tbody>
-                  {monitorAlerts.product.map((row) => (
+                  {alertRows.product.map((row) => (
                     <tr key={row.join("-")}><td><span className={`alert-badge ${row[0]}`}>{row[0]}</span></td><td>{row[1]}</td><td>{row[2]}</td><td>{row[3]}</td></tr>
                   ))}
                 </tbody>
@@ -676,7 +745,7 @@ function CurrentTransactionPage() {
               <table className="alert-table">
                 <thead><tr><th>TRX ID</th><th>Client</th><th>Product</th><th>Loss</th><th>Time</th></tr></thead>
                 <tbody>
-                  {monitorAlerts.rugi.map((row) => (
+                  {alertRows.rugi.map((row) => (
                     <tr key={row[0]}><td className="mono-sm">{row[0]}</td><td>{row[1]}</td><td>{row[2]}</td><td><span className="rugi-val">{row[3]}</span></td><td>{row[4]}</td></tr>
                   ))}
                 </tbody>
