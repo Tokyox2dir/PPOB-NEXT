@@ -119,10 +119,10 @@
 
 .filter-card {
   display: grid;
-  grid-template-columns: repeat(4, minmax(160px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(4, minmax(150px, 1fr)) auto auto;
+  gap: 12px;
   align-items: end;
-  padding: 18px;
+  padding: 16px;
   border: 1px solid var(--border);
   border-radius: 18px;
   background: var(--surface);
@@ -131,6 +131,7 @@
 .filter-control {
   display: grid;
   gap: 8px;
+  min-width: 0;
 }
 
 .filter-control span {
@@ -142,13 +143,30 @@
 
 .filter-control select,
 .form-panel input {
-  min-height: 44px;
+  min-height: 40px;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--surface-soft);
   color: var(--text);
   padding: 0 12px;
   font: inherit;
+}
+
+.btn-filter {
+  width: auto;
+  min-width: 72px;
+  min-height: 40px;
+  align-self: end;
+  justify-self: start;
+  justify-content: center;
+  padding: 0 18px;
+  flex: 0 0 auto;
+}
+
+.btn-warning {
+  background: var(--warn-bg);
+  border: 1px solid rgba(245, 158, 11, .35);
+  color: var(--warn);
 }
 
 .metrics-grid {
@@ -248,7 +266,7 @@
 
 .monitor-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(320px, .55fr);
+  grid-template-columns: minmax(0, 1.6fr) minmax(300px, .5fr);
   gap: 18px;
 }
 
@@ -273,6 +291,7 @@
   border: 1px solid var(--border);
   border-radius: 18px;
   background: var(--surface);
+  overflow: hidden;
 }
 
 .panel-heading,

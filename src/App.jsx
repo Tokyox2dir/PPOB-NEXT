@@ -172,11 +172,11 @@ function FilterPanel({ fields = ["account", "gateway", "serviceCode"], onStatus 
         />
       ))}
       {onStatus && (
-        <button className="btn btn-warning" type="button" onClick={() => onStatus("Pending")}>
+        <button className="btn btn-filter btn-warning" type="button" onClick={() => onStatus("Pending")}>
           Pending Only
         </button>
       )}
-      <button className="btn btn-primary" type="button">OK</button>
+      <button className="btn btn-filter btn-primary" type="button">OK</button>
     </div>
   );
 }
@@ -348,7 +348,7 @@ function CurrentTransactionPage() {
             { label: "Traffic", data: traffic, borderColor: "#2f80ed", backgroundColor: "rgba(47,128,237,.12)", tension: 0.35 },
             { label: "Success Rate", data: successRate, borderColor: "#00c853", backgroundColor: "rgba(0,200,83,.1)", tension: 0.35 },
           ]}
-          height={420}
+          height={380}
         />
         <div className="monitor-side">
           <SimpleChart
