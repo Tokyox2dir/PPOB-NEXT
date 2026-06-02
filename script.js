@@ -1670,6 +1670,26 @@ const moduleRows = {
     ["Admin", "14-Oct 2025 10:58:29", "Fahri", "Edit"],
     ["Super Admin", "02-Jul 2025 17:42:45", "Fahri", "Edit"],
   ],
+  reportMonthly: [
+    ["2026-06", "39,768", "94.68%", "2,236", "Rp5.690.756.214", "Rp5.680.793.115", "Rp9.963.099"],
+    ["2026-05", "407,501", "95.74%", "18,119", "Rp54.458.546.890", "Rp54.356.514.807", "Rp102.032.083"],
+    ["2026-04", "317,588", "94.53%", "18,361", "Rp36.510.952.753", "Rp36.448.821.321", "Rp62.131.432"],
+    ["2026-03", "101,330", "92.46%", "8,263", "Rp8.410.002.930", "Rp8.394.266.458", "Rp15.736.472"],
+    ["2026-02", "57,096", "93.76%", "3,798", "Rp4.139.342.252", "Rp4.133.611.008", "Rp5.731.244"],
+    ["2026-01", "64,196", "91.45%", "6,004", "Rp3.935.164.663", "Rp3.924.508.697", "Rp10.655.966"],
+  ],
+  reportDaily: [
+    ["2026-06-02", "12,647", "94.81%", "693", "Rp1.814.622.546", "Rp1.811.412.177", "Rp3.210.369"],
+    ["2026-06-01", "27,139", "94.62%", "1,543", "Rp3.877.406.723", "Rp3.870.649.891", "Rp6.756.832"],
+  ],
+  reportHourly: [
+    ["18", "983", "94.70%", "55", "Rp273.328.360", "Rp273.110.611", "Rp217.749"],
+    ["17", "1,044", "95.34%", "51", "Rp118.770.549", "Rp118.525.134", "Rp245.415"],
+    ["16", "780", "96.30%", "30", "Rp97.583.897", "Rp97.364.155", "Rp219.742"],
+    ["15", "780", "96.06%", "32", "Rp106.767.662", "Rp106.560.121", "Rp207.541"],
+    ["14", "569", "96.44%", "21", "Rp65.875.002", "Rp65.719.911", "Rp155.091"],
+    ["13", "486", "97.39%", "13", "Rp60.366.497", "Rp60.249.598", "Rp116.899"],
+  ],
 };
 
 function moduleStatusBadge(value) {
@@ -1711,6 +1731,89 @@ function renderTransactionPerMinutePage() {
     ${moduleFilters([["Date", "02/06/2026", "date"], ["Start Time", "00:00", "time"], ["End Time", "23:59", "time"], ["Gateway", ""], ["Account", ""], ["Service Code", "", "text", "Contoh: S5"], ["Destination", "", "text", "No. Tujuan"]])}
     <div class="module-chart-card"><div class="module-chart-title">Transaction per Minute - 2026-06-02</div><div class="module-chart">${bars.map((h) => `<div class="module-chart-bar" style="height:${h}%"></div>`).join("")}</div></div>
     ${moduleTable(["Time (HH:MM)", "Total", "Success", "Pending", "Reversed", "Success Rate", "Profit"], rows, { linkColumns: [0] })}
+  `;
+}
+
+function reportVisual(labels, heights, stackHeights) {
+  return `
+    <div class="report-layout">
+      <div class="report-card">
+        <div class="report-card-header">
+          <div class="report-card-title">Revenue / Cost / Margin</div>
+          <div class="report-card-note">Revenue trend</div>
+        </div>
+        <div class="report-lines">
+          ${labels.map((label, index) => `<div class="report-point"><div class="report-bar" style="height:${heights[index]}%"></div><div class="report-label">${escapeHtml(label)}</div></div>`).join("")}
+        </div>
+      </div>
+      <div class="report-card">
+        <div class="report-card-header">
+          <div class="report-card-title">Counts by Status</div>
+          <div class="report-card-note">Success, reversed, pending</div>
+        </div>
+        <div class="report-stack">
+          ${labels.map((label, index) => {
+            const h = stackHeights[index];
+            return `<div class="report-stack-col" title="${escapeHtml(label)}">
+              <div class="report-segment reversed" style="height:${Math.max(5, h * 0.12)}%"></div>
+              <div class="report-segment pending" style="height:${Math.max(3, h * 0.03)}%"></div>
+              <div class="report-segment success" style="height:${Math.max(12, h)}%"></div>
+              <div class="report-label">${escapeHtml(label)}</div>
+            </div>`;
+          }).join("")}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderReportPage(type) {
+  const config = {
+    monthly: {
+      shot: 1,
+      title: "Monthly Report",
+      subtitle: "Revenue, cost, margin, and status distribution across months.",
+      filters: [["Year", "2026"], ["Account", ""], ["Gateway (Supplier)", ""], ["Service Code", ""]],
+      labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+      heights: [18, 16, 25, 66, 92, 24],
+      stacks: [28, 24, 36, 74, 96, 22],
+      rows: moduleRows.reportMonthly,
+      peak: "May 2026",
+      peakValue: "Rp54.4B",
+    },
+    daily: {
+      shot: 2,
+      title: "Daily Report",
+      subtitle: "Daily settlement view for selected month and gateway.",
+      filters: [["Month", "Jun"], ["Year", "2026"], ["Account", ""], ["Gateway (Supplier)", ""], ["Service Code", ""]],
+      labels: ["Jun 01", "Jun 02"],
+      heights: [92, 43],
+      stacks: [88, 42],
+      rows: moduleRows.reportDaily,
+      peak: "2026-06-01",
+      peakValue: "27,139 trx",
+    },
+    hourly: {
+      shot: 3,
+      title: "Hourly Report",
+      subtitle: "Hourly traffic profile and peak transaction window.",
+      filters: [["Date", "02/06/2026", "date"], ["Account", ""], ["Gateway (Supplier)", ""], ["Service Code", ""]],
+      labels: ["13", "14", "15", "16", "17", "18"],
+      heights: [36, 42, 55, 61, 72, 88],
+      stacks: [38, 46, 58, 66, 80, 92],
+      rows: moduleRows.reportHourly,
+      peak: "18:00",
+      peakValue: "983 success",
+    },
+  }[type];
+
+  return `
+    ${moduleHero(config.shot, config.title, config.subtitle, `<button class="btn btn-primary">Export CSV</button><button class="btn btn-ghost">Download PDF</button>`)}
+    ${moduleMetrics([["Peak", config.peak], ["Peak Value", config.peakValue], ["Success Rate", "94.81%"], ["Margin", "0.18%"]])}
+    ${moduleFilters(config.filters)}
+    <div class="report-insight"><strong>Peak transaksi:</strong><span>${escapeHtml(config.peak)} menjadi titik tertinggi pada laporan ini, dengan tren success yang masih stabil.</span></div>
+    ${reportVisual(config.labels, config.heights, config.stacks)}
+    ${moduleTable([type === "hourly" ? "Hour" : type === "daily" ? "Date" : "Month", "Success", "Success Rate", "Reversed", "Revenue", "Cost", "Margin"], config.rows)}
   `;
 }
 
@@ -1798,6 +1901,9 @@ PID     CPU  MEM  COMMAND
     ${moduleHero(5, "Role / List", "Role catalog for administrator permission groups.", `<a class="module-action-link" href="#">Add New Role</a>`)}
     ${moduleTable(["Name", "Last Update", "By", "Action"], moduleRows.roles, { linkColumns: [0, 3] })}
   `,
+  "report-monthly": () => renderReportPage("monthly"),
+  "report-daily": () => renderReportPage("daily"),
+  "report-hourly": () => renderReportPage("hourly"),
 };
 
 function renderModulePage(view) {
