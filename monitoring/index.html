@@ -1,0 +1,280 @@
+  <!DOCTYPE html>
+  <html lang="en" data-theme="dark">
+  <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TRX Monitor - Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,300&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=24">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  </head>
+  <body>
+  <div class="layout">
+
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-mark">
+          <div class="logo-icon">TX</div>
+          <div>
+            <div class="logo-text">TRX Monitor</div>
+            <div class="logo-sub">v2.0 - Live</div>
+          </div>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-label">Monitoring</div>
+          <a class="nav-item active" href="#">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> Dashboard
+          </a>
+          <a class="nav-item" href="#">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Traffic
+          </a>
+          <a class="nav-item" href="#">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Transactions
+          </a>
+          <a class="nav-item" href="#">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg> Reports
+          </a>
+        </div>
+        <div class="nav-section">
+          <div class="nav-label">System</div>
+          <a class="nav-item" href="#">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg> Supplier
+          </a>
+          <a class="nav-item" href="#">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg> Client
+          </a>
+          <a class="nav-item" href="#">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 013 12M3.51 15.93A10 10 0 0020.49 8M12 1v2M12 21v2M4.22 4.22l1.41 1.41M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.41-1.41M18.36 5.64l1.42-1.42"/></svg> Settings
+          </a>
+        </div>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="nav-item" style="cursor:pointer;" onclick="toggleTheme()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="theme-icon"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.41 1.41M18.36 18.36l1.41 1.41M1 12h2M21 12h2M4.22 19.78l1.41-1.41M18.36 5.64l1.41-1.41"/></svg>
+          <span id="theme-label">Light Mode</span>
+        </div>
+      </div>
+    </aside>
+
+    <div class="main">
+      <div class="topbar fixed-elem">
+        <button class="sidebar-toggle btn btn-ghost" type="button" onclick="toggleSidebar()" title="Hide sidebar" aria-label="Toggle sidebar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="topbar-title">Transaction / List <span>15 May 2026</span></div>
+        <div class="topbar-actions">
+          <div class="badge-live">LIVE</div>
+          <button class="btn btn-ghost" onclick="refreshData()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg> Refresh
+          </button>
+          <button class="btn btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export
+          </button>
+        </div>
+      </div>
+
+      <div class="content">
+
+        <!-- FILTER BAR -->
+        <div class="filter-bar fade-in fixed-elem">
+          <div class="filter-group"><div class="filter-label">Start Date</div><input id="filter-start" class="filter-input date-input" type="datetime-local" value="2026-05-15T00:00"></div>
+          <div class="filter-group"><div class="filter-label">End Date</div><input id="filter-end" class="filter-input date-input" type="datetime-local" value="2026-05-15T23:59"></div>
+          <div class="filter-group"><div class="filter-label">Account</div><div class="filter-combo" data-placeholder="All Accounts"><input id="filter-client" type="hidden"><button type="button" class="filter-input filter-combo-toggle" onclick="toggleFilterCombo(this)"><span>All Accounts</span></button><div class="filter-combo-menu"><input class="filter-combo-search" type="search" placeholder="Search account..." oninput="filterComboOptions(this)"><div class="filter-combo-options" id="client-options"></div></div></div></div>
+          <div class="filter-group"><div class="filter-label">Client ID</div><input id="filter-client-id" class="filter-input search-input" type="search" placeholder="Search client ID"></div>
+          <div class="filter-group"><div class="filter-label">Gateway</div><div class="filter-combo" data-placeholder="All Gateways"><input id="filter-supplier" type="hidden"><button type="button" class="filter-input filter-combo-toggle" onclick="toggleFilterCombo(this)"><span>All Gateways</span></button><div class="filter-combo-menu"><input class="filter-combo-search" type="search" placeholder="Search gateway..." oninput="filterComboOptions(this)"><div class="filter-combo-options" id="supplier-options"></div></div></div></div>
+          <div class="filter-group"><div class="filter-label">Supplier ID</div><input id="filter-supplier-id" class="filter-input search-input" type="search" placeholder="Search supplier ID"></div>
+          <div class="filter-group"><div class="filter-label">Provider</div><div class="filter-combo" data-placeholder="All Providers"><input id="filter-provider" type="hidden"><button type="button" class="filter-input filter-combo-toggle" onclick="toggleFilterCombo(this)"><span>All Providers</span></button><div class="filter-combo-menu"><input class="filter-combo-search" type="search" placeholder="Search provider..." oninput="filterComboOptions(this)"><div class="filter-combo-options" id="provider-options"></div></div></div></div>
+          <div class="filter-group"><div class="filter-label">Product/Service</div><input id="filter-product" class="filter-input search-input" type="search" placeholder="Search product"></div>
+          <div class="filter-group"><div class="filter-label">Status</div><div class="filter-combo" data-placeholder="All Statuses"><input id="filter-status" type="hidden"><button type="button" class="filter-input filter-combo-toggle" onclick="toggleFilterCombo(this)"><span>All Statuses</span></button><div class="filter-combo-menu"><input class="filter-combo-search" type="search" placeholder="Search status..." oninput="filterComboOptions(this)"><div class="filter-combo-options" id="status-options"></div></div></div></div>
+          <div class="filter-actions">
+            <button class="btn btn-primary" onclick="applyDashboardFilters()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Search</button>
+            <button class="btn btn-ghost" onclick="resetDashboardFilters()">Reset</button>
+          </div>
+        </div>
+
+        <!-- STAT CARDS -->
+        <div class="stats-row fixed-elem">
+          <div class="stat-card total fade-in"><div class="stat-label">Total Transactions</div><div class="stat-value total" id="s-total">7,615</div><div class="stat-pct">Today</div></div>
+          <div class="stat-card success fade-in"><div class="stat-label">Success</div><div class="stat-value success" id="s-success">6,755</div><div class="stat-pct" id="s-success-pct">88.7%</div></div>
+          <button class="stat-card pending fade-in stat-card-button" type="button" onclick="showPendingTransactions()" aria-label="Show pending transactions"><div class="stat-label">Pending</div><div class="stat-value pending" id="s-pending">2</div><div class="stat-pct">0.03%</div></button>
+          <div class="stat-card reversed fade-in"><div class="stat-label">Reversed</div><div class="stat-value reversed" id="s-rev">858</div><div class="stat-pct">11.3%</div></div>
+          <div class="stat-card revenue fade-in"><div class="stat-label">Revenue</div><div class="stat-value revenue" id="s-revenue">Rp0</div><div class="stat-pct" id="s-revenue-pct">Today</div></div>
+          <div class="stat-card margin fade-in"><div class="stat-label">Margin</div><div class="stat-value margin" id="s-margin">Rp0</div><div class="stat-pct" id="s-margin-pct">Today</div></div>
+        </div>
+
+        <!-- MAIN GRID -->
+        <div class="dashboard-main-grid">
+
+          <!-- LEFT COLUMN -->
+          <div class="grid-left">
+
+            <!-- Top row: hourly chart and donut chart -->
+            <div class="top-charts-row fixed-elem">
+
+              <div class="card chart-card-hourly fade-in">
+                <div class="card-header">
+                  <div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Volume Per Hour</div>
+                  <div class="chart-time-range">05:00 - 11:19</div>
+                </div>
+                <div class="chart-body">
+                  <div class="chart-wrap"><canvas id="chartHourly"></canvas></div>
+                </div>
+              </div>
+
+              <div class="card chart-card-donut fade-in">
+                <div class="card-header">
+                  <div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Status Breakdown</div>
+                </div>
+                <div class="chart-body donut-body">
+                  <div class="chart-wrap donut-wrap"><canvas id="chartDonut"></canvas></div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Transaction Table -->
+            <div class="card fade-in flex-fill trx-card">
+              <div class="card-header fixed-elem">
+                <div class="card-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Transaction List
+                </div>
+                <span id="trx-card-summary">7,615 rows - Page <b>1</b> of 762</span>
+              </div>
+              <div class="table-wrap scrollable flex-fill trx-scroll">
+                <table class="trx-table">
+                  <thead><tr><th>#</th><th>Sys TRX ID</th><th>Client</th><th>Supplier</th><th>Product</th><th>Destination</th><th>Request Time</th><th>Time (s)</th><th>Price</th><th>Margin</th><th>Reason</th><th>Status</th></tr></thead>
+                  <tbody id="trx-tbody"></tbody>
+                </table>
+              </div>
+              <div class="pagination fixed-elem">
+                <div class="page-info">
+                  <span id="trx-page-info">Showing <b>1-10</b> of <b>7,615</b> transactions</span>
+                  <label class="page-size-control">Rows
+                    <select id="page-size" onchange="setPageSize(this.value)">
+                      <option value="10" selected>10</option>
+                      <option value="25">25</option>
+                      <option value="50">50</option>
+                      <option value="75">75</option>
+                      <option value="100">100</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="page-btns" id="page-btns"></div>
+              </div>
+            </div>
+
+          </div><!-- end grid-left -->
+
+          <!-- RIGHT COLUMN -->
+          <div class="grid-right">
+
+            <!-- Traffic Per Client -->
+            <div class="card fade-in fixed-elem">
+              <div class="card-header">
+                <div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg> Traffic Per Client</div>
+                <span class="card-kicker">vs same time yesterday</span>
+              </div>
+              <div class="table-wrap traffic-scroll">
+                <table class="traffic-table">
+                  <thead><tr><th>Client</th><th>Today</th><th>Yesterday</th><th>Delta</th><th>Bar</th></tr></thead>
+                  <tbody id="traffic-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Balance Monitor -->
+            <div class="card fade-in fixed-elem balance-card">
+              <div class="card-header">
+                <div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 11h4M6 9h5M6 13h3"/></svg> Balance Monitor</div>
+                <span class="alert-count-badge warn" id="balance-count">0 low</span>
+              </div>
+              <div class="table-wrap balance-scroll">
+                <table class="alert-table balance-table">
+                  <thead><tr><th>Level</th><th>Account</th><th>Type</th><th>Balance</th><th>Threshold</th></tr></thead>
+                  <tbody id="alert-balance-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Alert Monitor -->
+            <div class="card fade-in flex-fill alert-monitor-card">
+              <div class="card-header fixed-elem alert-header">
+                <div class="alert-header-top">
+                  <div class="card-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Alert Monitor
+                  </div>
+                  <div style="display:flex; gap:5px;">
+                    <span class="alert-count-badge danger">2 critical</span>
+                    <span class="alert-count-badge warn">3 warn</span>
+                  </div>
+                </div>
+                <div class="alert-tabs">
+                  <button class="alert-tab active" onclick="switchAlertTab('stop', this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                    Client Info
+                    <span class="tab-badge" style="background:var(--danger-bg);color:var(--danger);">2</span>
+                  </button>
+                  <button class="alert-tab" onclick="switchAlertTab('product', this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                    Incidents
+                    <span class="tab-badge" style="background:var(--warn-bg);color:var(--warn);">2</span>
+                  </button>
+                  <button class="alert-tab" onclick="switchAlertTab('rugi', this)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                    Loss Trx
+                    <span class="tab-badge" style="background:var(--pending-bg);color:var(--pending);">1</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Panel: Client Stop -->
+              <div class="alert-panel active scrollable flex-fill alert-scroll" id="panel-stop">
+                <table class="alert-table">
+                  <thead><tr><th>Client</th><th>Product</th><th>Detail</th><th>Since</th></tr></thead>
+                  <tbody id="alert-stop-tbody"></tbody>
+                </table>
+              </div>
+
+              <!-- Panel: Product Incidents -->
+              <div class="alert-panel scrollable flex-fill alert-scroll" id="panel-product">
+                <table class="alert-table">
+                  <thead><tr><th>Level</th><th>Product / Supplier</th><th>Description</th><th>Time</th></tr></thead>
+                  <tbody id="alert-product-tbody"></tbody>
+                </table>
+              </div>
+
+              <!-- Panel: Loss Transactions -->
+              <div class="alert-panel scrollable flex-fill alert-scroll" id="panel-rugi">
+                <table class="alert-table">
+                  <thead><tr><th>TRX ID</th><th>Client</th><th>Product</th><th>Loss</th><th>Time</th></tr></thead>
+                  <tbody id="alert-rugi-tbody"></tbody>
+                </table>
+              </div>
+
+            </div>
+
+          </div><!-- end grid-right -->
+
+        </div><!-- end dashboard-main-grid -->
+      </div><!-- end content -->
+    </div><!-- end main -->
+  </div>
+
+  <div class="trx-modal-backdrop" id="trx-modal" onclick="closeTransactionDetail(event)">
+    <div class="trx-modal" role="dialog" aria-modal="true" aria-labelledby="trx-modal-title">
+      <div class="trx-modal-header">
+        <div>
+          <div class="trx-modal-eyebrow">Transaction Detail</div>
+          <div class="trx-modal-title" id="trx-modal-title">Sys TRX ID</div>
+        </div>
+        <button class="trx-modal-close" type="button" onclick="closeTransactionDetail()" aria-label="Close transaction detail">&times;</button>
+      </div>
+      <div class="trx-modal-body" id="trx-modal-body"></div>
+    </div>
+  </div>
+
+  <script src="script.js?v=24"></script>
+  </body>
+  </html>

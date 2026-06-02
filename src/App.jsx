@@ -799,7 +799,7 @@ function ChangePasswordPage() {
 }
 
 function ModulePage({ view }) {
-  if (view === "current-transaction") return <CurrentTransactionPage />;
+  if (view === "current-transaction") return <LegacyMonitoringPage />;
   if (view === "admin-change-password") return <ChangePasswordPage />;
   const module = moduleTables[view];
   if (!module) return <ReportPage mode="hourly" />;
@@ -813,6 +813,16 @@ function ModulePage({ view }) {
       <FilterPanel fields={fieldMap} />
       <DataTable columns={module.columns} rows={module.rows} />
     </div>
+  );
+}
+
+function LegacyMonitoringPage() {
+  return (
+    <iframe
+      className="legacy-monitor-frame"
+      src="./monitoring/index.html?v=pending-click"
+      title="Current Transaction Monitoring"
+    />
   );
 }
 
@@ -874,6 +884,10 @@ export default function App() {
     if (activeView.startsWith("report-")) return <ReportPage mode={activeView.replace("report-", "")} />;
     return <ModulePage view={activeView} />;
   }, [activeView]);
+
+  if (activeView === "current-transaction") {
+    return <LegacyMonitoringPage />;
+  }
 
   return (
     <div className={`layout ${sidebarHidden ? "sidebar-hidden" : ""}`}>
