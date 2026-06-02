@@ -2287,3 +2287,101 @@ tbody tr:hover td { background: var(--bg3); }
   width: auto;
   min-width: 64px;
 }
+
+.current-monitor {
+  padding: 14px 18px 22px;
+  gap: 14px;
+}
+
+.current-monitor .dashboard-main-grid {
+  grid-template-columns: minmax(0, 1.94fr) minmax(520px, 1fr);
+  align-items: start;
+}
+
+.current-monitor .top-charts-row {
+  grid-template-columns: minmax(0, 1.62fr) minmax(360px, 1fr);
+}
+
+.current-monitor .grid-right {
+  gap: 12px;
+}
+
+.current-monitor .grid-right > .card {
+  width: 100%;
+}
+
+.current-monitor .traffic-scroll {
+  max-height: 214px;
+  overflow-x: hidden;
+}
+
+.current-monitor .traffic-table {
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.current-monitor .traffic-table th:nth-child(4),
+.current-monitor .traffic-table td:nth-child(4),
+.current-monitor .traffic-table th:nth-child(5),
+.current-monitor .traffic-table td:nth-child(5) {
+  display: none;
+}
+
+.current-monitor .balance-card {
+  max-height: 152px;
+}
+
+.current-monitor .balance-scroll {
+  max-height: 92px;
+  overflow-x: hidden;
+}
+
+.current-monitor .balance-table {
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.current-monitor .balance-table th,
+.current-monitor .balance-table td {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.current-monitor .balance-table th:nth-child(1),
+.current-monitor .balance-table td:nth-child(1) {
+  width: 72px;
+}
+
+.current-monitor .balance-table th:nth-child(3),
+.current-monitor .balance-table td:nth-child(3) {
+  width: 82px;
+}
+
+.current-monitor .balance-table th:nth-child(5),
+.current-monitor .balance-table td:nth-child(5) {
+  display: none;
+}
+
+.current-monitor .alert-monitor-card {
+  flex: 0 0 328px;
+  max-height: 328px;
+}
+
+.current-monitor .alert-scroll {
+  max-height: 230px;
+}
+
+@media (max-width: 1500px) {
+  .current-monitor .dashboard-main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .current-monitor .grid-right {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .current-monitor .grid-right > .card:first-child {
+    grid-column: 1 / -1;
+  }
+}

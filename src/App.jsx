@@ -463,7 +463,7 @@ function CurrentTransactionPage() {
   const resetFilters = () => setFilters({ account: "", gateway: "", provider: "", status: "", clientId: "", supplierId: "", product: "" });
 
   return (
-    <div className="content">
+    <div className="content current-monitor">
       <div className="filter-bar fade-in fixed-elem">
         <div className="filter-group"><div className="filter-label">Start Date</div><input className="filter-input date-input" type="datetime-local" defaultValue="2026-05-15T00:00" /></div>
         <div className="filter-group"><div className="filter-label">End Date</div><input className="filter-input date-input" type="datetime-local" defaultValue="2026-05-15T23:59" /></div>
