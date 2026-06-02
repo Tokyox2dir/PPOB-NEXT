@@ -203,6 +203,44 @@ function StatCard({ label, value, tone, onClick }) {
   );
 }
 
+function HealthCard({ label, value, caption, tone }) {
+  return (
+    <div className={`health-card ${tone || ""}`}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <small>{caption}</small>
+    </div>
+  );
+}
+
+function GatewayHealthList() {
+  const gateways = [
+    ["SMB", "98.2%", "1.887B", "stable"],
+    ["Bima Sakti", "95.7%", "83.8M", "stable"],
+    ["Toplink", "93.1%", "80.4M", "watch"],
+    ["Telin", "89.6%", "96.3M", "issue"],
+  ];
+
+  return (
+    <div className="gateway-health">
+      <div className="panel-heading">
+        <span>Gateway Health</span>
+        <strong>Live</strong>
+      </div>
+      {gateways.map(([name, success, balance, tone]) => (
+        <div className="gateway-row" key={name}>
+          <div>
+            <strong>{name}</strong>
+            <span>Success {success}</span>
+          </div>
+          <div className="gateway-balance">{balance}</div>
+          <span className={`health-dot ${tone}`} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function DataTable({ columns, rows }) {
   return (
     <div className="table-wrap">
@@ -266,15 +304,34 @@ function CurrentTransactionPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const rows = statusFilter ? transactions.filter((row) => row[3] === statusFilter) : transactions;
   const pendingCount = transactions.filter((row) => row[3] === "Pending").length;
+  const trafficLabels = ["17:05", "17:06", "17:07", "17:08", "17:09", "17:10", "17:11", "17:12", "17:13", "17:14", "17:15", "17:16", "17:17", "17:18"];
+  const traffic = [780, 920, 860, 1280, 1110, 1450, 1390, 1620, 1810, 1715, 1905, 1760, 1920, 1956];
+  const successRate = [93.1, 94.6, 92.8, 95.2, 94.1, 96.3, 95.5, 94.9, 95.8, 93.7, 96.1, 94.8, 95.6, 94.81];
 
   return (
-    <div className="content dashboard-content">
-      <Hero screenshot="Live" title="Current Transaction" subtitle="Monitoring transaksi real-time dengan filter status dan traffic." />
+    <div className="content dashboard-content monitoring-page">
+      <section className="monitor-hero">
+        <div>
+          <span className="eyebrow">Monitoring Dashboard</span>
+          <h1>Current Transaction</h1>
+          <p>Ringkasan transaksi live, status gateway, pending drill-down, dan traffic per menit.</p>
+        </div>
+        <div className="monitor-date">
+          <span>02 Jun 2026</span>
+          <strong>17:18 WIB</strong>
+        </div>
+      </section>
       <div className="metrics-grid">
-        <StatCard label="Success" value="94.81%" tone="success" />
+        <StatCard label="Success Rate" value="94.81%" tone="success" />
         <StatCard label="Pending" value={pendingCount} tone="warning" onClick={() => setStatusFilter("Pending")} />
         <StatCard label="Rejected" value="3" tone="danger" />
-        <StatCard label="Traffic / min" value="1,956" />
+        <StatCard label="Traffic / Min" value="1,956" />
+      </div>
+      <div className="health-grid">
+        <HealthCard label="Success" value="39,768" caption="Hari ini" tone="success" />
+        <HealthCard label="Reversed" value="2,236" caption="5.32%" tone="warning" />
+        <HealthCard label="Revenue" value="Rp5.69B" caption="Daily gross" />
+        <HealthCard label="Margin" value="Rp9.96M" caption="0.18%" tone="success" />
       </div>
       <FilterPanel fields={["account", "gateway", "serviceCode", "status"]} onStatus={setStatusFilter} />
       {statusFilter && (
@@ -283,20 +340,25 @@ function CurrentTransactionPage() {
           <button type="button" onClick={() => setStatusFilter("")}>Reset</button>
         </div>
       )}
-      <div className="chart-grid">
+      <div className="monitor-grid">
         <SimpleChart
           type="line"
-          labels={["17:12", "17:13", "17:14", "17:15", "17:16", "17:17", "17:18"]}
+          labels={trafficLabels}
           datasets={[
-            { label: "Traffic", data: [820, 1100, 980, 1450, 1760, 1920, 1956], borderColor: "#2f80ed", backgroundColor: "rgba(47,128,237,.12)", tension: 0.35 },
-            { label: "Success Rate", data: [92, 94, 95, 91, 96, 94, 95], borderColor: "#00c853", backgroundColor: "rgba(0,200,83,.1)", tension: 0.35 },
+            { label: "Traffic", data: traffic, borderColor: "#2f80ed", backgroundColor: "rgba(47,128,237,.12)", tension: 0.35 },
+            { label: "Success Rate", data: successRate, borderColor: "#00c853", backgroundColor: "rgba(0,200,83,.1)", tension: 0.35 },
           ]}
+          height={420}
         />
-        <SimpleChart
-          type="bar"
-          labels={["Pending", "Success", "Rejected", "Reversed"]}
-          datasets={[{ label: "Status", data: [pendingCount, 42, 3, 5], backgroundColor: ["#fbbf24", "#22c55e", "#ef4444", "#8b5e4f"] }]}
-        />
+        <div className="monitor-side">
+          <SimpleChart
+            type="bar"
+            labels={["Pending", "Success", "Rejected", "Reversed"]}
+            datasets={[{ label: "Status", data: [pendingCount, 42, 3, 5], backgroundColor: ["#fbbf24", "#22c55e", "#ef4444", "#8b5e4f"] }]}
+            height={210}
+          />
+          <GatewayHealthList />
+        </div>
       </div>
       <DataTable columns={["Time Stamp", "Account", "RefId", "Status", "Code", "Destination", "Value"]} rows={rows} />
     </div>

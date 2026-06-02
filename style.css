@@ -63,6 +63,60 @@
   padding: 24px 28px 40px;
 }
 
+.monitor-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px 28px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background:
+    linear-gradient(135deg, rgba(47, 128, 237, .16), transparent 42%),
+    linear-gradient(160deg, var(--surface), var(--surface-soft));
+}
+
+.monitor-hero h1 {
+  margin: 8px 0 8px;
+  color: var(--text);
+  font-size: clamp(30px, 4vw, 54px);
+  line-height: 1;
+}
+
+.monitor-hero p {
+  max-width: 720px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.monitor-date {
+  min-width: 180px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .04);
+  text-align: right;
+}
+
+.monitor-date span,
+.monitor-date strong {
+  display: block;
+}
+
+.monitor-date span {
+  color: var(--muted);
+  font: 700 12px/1.6 "Space Mono", monospace;
+  text-transform: uppercase;
+}
+
+.monitor-date strong {
+  margin-top: 6px;
+  color: var(--text);
+  font-size: 22px;
+}
+
 .filter-card {
   display: grid;
   grid-template-columns: repeat(4, minmax(160px, 1fr));
@@ -101,6 +155,48 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
+}
+
+.health-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.health-card {
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.health-card span,
+.health-card small {
+  display: block;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.health-card span {
+  font: 700 12px/1 "Space Mono", monospace;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.health-card strong {
+  display: block;
+  margin: 10px 0 4px;
+  color: var(--text);
+  font-size: 28px;
+  line-height: 1;
+}
+
+.health-card.success {
+  border-color: rgba(34, 197, 94, .35);
+}
+
+.health-card.warning {
+  border-color: rgba(251, 191, 36, .45);
 }
 
 .metric-card {
@@ -150,6 +246,17 @@
   gap: 18px;
 }
 
+.monitor-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(320px, .55fr);
+  gap: 18px;
+}
+
+.monitor-side {
+  display: grid;
+  gap: 18px;
+}
+
 .chart-panel {
   position: relative;
   min-height: 260px;
@@ -157,6 +264,82 @@
   border: 1px solid var(--border);
   border-radius: 18px;
   background: var(--surface);
+}
+
+.gateway-health {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+.panel-heading,
+.gateway-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.panel-heading span {
+  color: var(--muted);
+  font: 700 12px/1 "Space Mono", monospace;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.panel-heading strong {
+  color: #22c55e;
+  font-size: 13px;
+}
+
+.gateway-row {
+  min-height: 58px;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--surface-soft);
+}
+
+.gateway-row strong,
+.gateway-row span {
+  display: block;
+}
+
+.gateway-row strong {
+  color: var(--text);
+  font-size: 15px;
+}
+
+.gateway-row span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.gateway-balance {
+  color: var(--text);
+  font: 700 13px/1 "Space Mono", monospace;
+}
+
+.health-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #22c55e;
+  box-shadow: 0 0 14px rgba(34, 197, 94, .7);
+}
+
+.health-dot.watch {
+  background: #fbbf24;
+  box-shadow: 0 0 14px rgba(251, 191, 36, .7);
+}
+
+.health-dot.issue {
+  background: #ef4444;
+  box-shadow: 0 0 14px rgba(239, 68, 68, .7);
 }
 
 .table-wrap {
@@ -250,8 +433,20 @@
 @media (max-width: 980px) {
   .filter-card,
   .metrics-grid,
-  .chart-grid {
+  .chart-grid,
+  .health-grid,
+  .monitor-grid {
     grid-template-columns: 1fr;
+  }
+
+  .monitor-hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .monitor-date {
+    width: 100%;
+    text-align: left;
   }
 }
 
