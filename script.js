@@ -632,6 +632,7 @@ function resetDashboardFilters() {
 // Render traffic
 function renderTraffic() {
   const tbody = document.getElementById("traffic-tbody");
+  if (!tbody) return;
   const rows = getDashboardRows();
   const trafficRows = hasActiveFilters()
     ? buildFilteredTrafficRows(rows)
@@ -703,6 +704,7 @@ function buildFilteredTrafficRows(rows) {
 }
 
 function updateSummaryStats() {
+  if (!document.getElementById("s-total")) return;
   const rows = getDashboardRows();
   const total = hasActiveFilters() ? rows.length : TRAFFIC.reduce((sum, t) => sum + t.today, 0);
   const reversed = hasActiveFilters() ? countRowsByStatus("Reversed", rows) : Math.max(0, Math.round(total * 0.112 + Math.random() * 8));
@@ -921,6 +923,7 @@ function renderAlertBalance() {
 }
 
 function renderAllAlerts() {
+  if (!document.getElementById("alert-stop-tbody")) return;
   renderAlertStop();
   renderAlertProduct();
   renderAlertRugi();
@@ -1264,6 +1267,7 @@ document.addEventListener("click", (event) => {
 // Render transaction table
 function renderTrx() {
   const tbody = document.getElementById("trx-tbody");
+  if (!tbody) return;
   const rows = getFilteredRows();
   const totalRows = getFilteredTotalCount(rows);
   const start = (currentPage - 1) * pageSize;
@@ -1304,6 +1308,7 @@ function renderTrx() {
 // Pagination
 function renderPagination() {
   const wrap = document.getElementById("page-btns");
+  if (!wrap) return;
   const totalRows = getFilteredTotalCount();
   const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
   const end = totalRows ? Math.min(currentPage * pageSize, totalRows) : 0;
@@ -1416,10 +1421,16 @@ const donutCenterTextPlugin = {
 };
 
 function initCharts() {
+  const hourlyCanvas = document.getElementById("chartHourly");
+  const donutCanvas = document.getElementById("chartDonut");
+  if (!hourlyCanvas || !donutCanvas) return;
+  if (chartHourly) chartHourly.destroy();
+  if (chartDonut) chartDonut.destroy();
+
   const c = getChartColors();
   Chart.defaults.font.family = "'DM Sans', sans-serif";
 
-  const ctxH = document.getElementById("chartHourly").getContext("2d");
+  const ctxH = hourlyCanvas.getContext("2d");
 
   chartHourly = new Chart(ctxH, {
     type: "line",
@@ -1481,7 +1492,7 @@ function initCharts() {
     },
   });
 
-  const ctxD = document.getElementById("chartDonut").getContext("2d");
+  const ctxD = donutCanvas.getContext("2d");
 
   chartDonut = new Chart(ctxD, {
     type: "doughnut",
@@ -1570,6 +1581,207 @@ function initSidebarGroups() {
   });
 }
 
+let dashboardContentHtml = "";
+let dashboardTopbarTitleHtml = "";
+
+const moduleRows = {
+  rejected: [
+    ["02-06-2026 17:11:05", "Telin", "0", "service code invalid", "S100", "081234567890", "Rejected", "-"],
+    ["02-06-2026 17:10:48", "Telin", "0", "service code invalid", "S50", "085645231900", "Rejected", "-"],
+    ["02-06-2026 17:07:16", "Telin", "0", "destination blocked by route", "PLN", "538413202094", "Rejected", "-"],
+    ["02-06-2026 17:06:22", "bkpay", "0", "service code invalid", "DANAKH", "087714351850", "Rejected", "-"],
+    ["02-06-2026 16:57:50", "Bukalapak", "0", "invalid inquiry payload", "I10", "085775032576", "Rejected", "-"],
+  ],
+  transactionRoute: [
+    ["SMB", "BIFASTOPEN", "BIFASTOPEN", "184", "165", "89.67%", "19", "10.33%"],
+    ["SMB", "DANAKH", "DANAOPEN", "8,728", "8,424", "96.52%", "304", "3.48%"],
+    ["SMB", "GPYKH", "GPYOPEN", "362", "353", "97.51%", "9", "2.49%"],
+    ["SMB", "SHPKH", "SHPOPEN", "1", "1", "100.00%", "0", "0.00%"],
+  ],
+  productList: [
+    ["Air", "KABKUPANG", "NTT Kab Kupang", "0", "Postpaid", "PDAM", "TRUE", "12-Aug 2025 10:53:42", "Iqbal"],
+    ["Air", "KABKENDAL", "Jawa Tengah Kab Kendal", "0", "Postpaid", "PDAM", "TRUE", "12-Aug 2025 10:54:24", "Iqbal"],
+    ["Air", "KOTAKEDIRI", "Jawa Timur Kota Kediri", "0", "Postpaid", "PDAM", "TRUE", "12-Aug 2025 10:51:09", "Agiel"],
+    ["Air", "KOTABANJAR", "Jawa Barat Kota Banjar", "0", "Postpaid", "PDAM", "TRUE", "12-Aug 2025 10:54:02", "Iqbal"],
+    ["Pulsa", "S100", "Telkomsel 100K", "100000", "Prepaid", "Telco", "TRUE", "30-May 2026 14:31:38", "Iky"],
+  ],
+  productRoute: [
+    ["Bumdes,esa,Telin", "AETRAJAKARTA", "Bima Sakti"],
+    ["Bumdes,esa,Telin", "AETRATANGERANG", "Bima Sakti"],
+    ["", "ATBKEPRI", ""],
+    ["", "ATF10", "SMB"],
+    ["", "ATF100", "SMB"],
+    ["", "ATF105", "SMB"],
+  ],
+  checkPrice: [
+    ["Telin", "S100", "7379", "Rp96.300", "13-Jan 2026 17:42:10", "Fahri", "FALSE"],
+    ["Kisel ApiHub", "S100", "SP100", "Rp96.850", "30-May 2026 14:31:38", "Iky", "FALSE"],
+    ["Indotel", "S100", "S100", "Rp96.890", "29-May 2026 19:36:01", "H2H", "TRUE"],
+    ["MetroReload", "S100", "BSP100", "Rp96.900", "19-May 2026 17:31:00", "fryan", "TRUE"],
+    ["SMB", "S100", "TSEL100K", "Rp97.075", "19-May 2026 11:44:56", "H2H", "TRUE"],
+  ],
+  gatewayList: [
+    ["Teratai", "https://terataiapi.socx.app/reseller/api/v1/http/purchase", "TRUE", "60.659.586", "60.760.812", "05-05-2026 20:57:33", "Dito"],
+    ["Mobile Pulsa", "https://mobilepulsa.net/api/v1/bill/check", "TRUE", "9.718.000", "9.718.000", "24-04-2026 16:13:59", "Fahri"],
+    ["Kisel ApiHub", "https://apihub.kiselindonesia.net/transaction/", "TRUE", "55.909.185", "55.995.025", "11-05-2026 13:03:13", "Fahri"],
+    ["Odin", "-", "FALSE", "-", "-", "05-03-2026 09:10:31", "Fahri"],
+    ["SMB", "http://49.0.203.84:8081/api/h2h", "TRUE", "1.651.644.186", "1.887.317.001", "15-05-2026 07:54:43", "Iky"],
+  ],
+  memberList: [
+    ["Leisurelink", "leisurelink", "49", "52.74.114.188, 52.77.203.226", "0", "0", "19-05-2026 17:27:54", "vio"],
+    ["PT. Teratai Cipta Inovasi", "Teratai", "47", "128.199.190.119", "300.000", "0", "22-04-2026 15:47:09", "Fahri"],
+    ["BK PAY", "bkpay", "44", "8.219.251.167, 47.237.143.194", "1.466.244.248", "0", "30-05-2026 13:54:15", "Iky"],
+    ["HIGO", "neoparty", "43", "110.239.84.200, 110.239.70.52", "58.538.561", "0", "25-05-2026 09:38:21", "Dito"],
+    ["TOPLINK INDONESIA", "toplink", "36", "103.182.189.202, 103.118.108.13", "23.120.464", "0", "06-05-2026 11:03:40", "Dito"],
+  ],
+  memberVirtual: [
+    ["01-06-2026 22:01:54", "quantum", "308", "019e83b4-a565-7e91-81a6-92c558f61a77", "Bank Central Asia", "111316394107285", "01-06-2026 22:03:56", "Success", "100.000.000", "true"],
+    ["01-06-2026 21:53:52", "quantum", "307", "019e83ad-485b-7c6b-a7c9-5e05b90cf2db", "Bank Central Asia", "111316394107285", "01-06-2026 22:01:41", "Success", "100.000.000", "true"],
+  ],
+};
+
+function moduleStatusBadge(value) {
+  const cls = value === "TRUE" || value === "Success" ? "success" : value === "FALSE" || value === "Rejected" ? "danger" : "warn";
+  return `<span class="module-badge ${cls}">${escapeHtml(value)}</span>`;
+}
+
+function moduleTable(headers, rows, options = {}) {
+  const body = rows.map((row, index) => {
+    const rowClass = options.alertFirst && index === 0 ? "module-row-alert" : options.goodFirst && index === 0 ? "module-row-good" : "";
+    return `<tr class="${rowClass}"><td>${index + 1}</td>${row.map((cell, cellIndex) => {
+      const isStatus = /^(TRUE|FALSE|Rejected|Success)$/i.test(String(cell));
+      const isLink = options.linkColumns?.includes(cellIndex);
+      return `<td>${isStatus ? moduleStatusBadge(cell) : isLink ? `<span class="module-link">${escapeHtml(cell)}</span>` : escapeHtml(cell)}</td>`;
+    }).join("")}</tr>`;
+  }).join("");
+
+  return `<div class="module-table-card"><div class="module-table-wrap"><table class="module-table"><thead><tr><th>#</th>${headers.map((h) => `<th>${escapeHtml(h)}</th>`).join("")}</tr></thead><tbody>${body}</tbody></table></div></div>`;
+}
+
+function moduleHero(pageNumber, title, subtitle, actions = "") {
+  return `<div class="module-hero"><div><div class="module-kicker">Screenshot ${pageNumber}</div><div class="module-title">${escapeHtml(title)}</div><div class="module-subtitle">${escapeHtml(subtitle)}</div></div><div class="module-actions">${actions}</div></div>`;
+}
+
+function moduleFilters(fields, button = "OK") {
+  return `<div class="module-filter">${fields.map((field) => `<div class="module-field"><label>${escapeHtml(field[0])}</label><input type="${field[2] || "text"}" value="${escapeHtml(field[1] || "")}" placeholder="${escapeHtml(field[3] || "")}"></div>`).join("")}<div class="module-filter-actions"><button class="btn btn-primary">${escapeHtml(button)}</button><button class="btn btn-ghost">Reset</button></div></div>`;
+}
+
+function moduleMetrics(items) {
+  return `<div class="module-grid">${items.map(([label, value]) => `<div class="module-metric"><div class="module-metric-label">${escapeHtml(label)}</div><div class="module-metric-value">${escapeHtml(value)}</div></div>`).join("")}</div>`;
+}
+
+function renderTransactionPerMinutePage() {
+  const bars = [28, 42, 35, 64, 22, 51, 44, 38, 73, 46, 59, 40, 66, 52, 71, 48, 63, 55, 78, 60, 69, 74, 58, 82];
+  const rows = ["17:18", "17:17", "17:16", "17:15", "17:14", "17:13"].map((time, index) => [time, String([18, 18, 12, 15, 12, 16][index]), String([16, 17, 12, 13, 12, 16][index]), String([1, 0, 0, 0, 0, 0][index]), String([1, 1, 0, 2, 0, 0][index]), ["88.89%", "94.44%", "100%", "86.67%", "100%", "100%"][index], `Rp${[3230, 4015, 2750, 3110, 2845, 3915][index]}`]);
+  return `
+    ${moduleHero(3, "Transaction / Per Minute", "Minute-level traffic, success rate, pending, reversed, and profit.")}
+    ${moduleMetrics([["Success Rate", "94.81%"], ["Peak Minute", "18 trx"], ["Pending Rate", "0.8%"], ["Profit", "Rp22.470"]])}
+    ${moduleFilters([["Date", "02/06/2026", "date"], ["Start Time", "00:00", "time"], ["End Time", "23:59", "time"], ["Gateway", ""], ["Account", ""], ["Service Code", "", "text", "Contoh: S5"], ["Destination", "", "text", "No. Tujuan"]])}
+    <div class="module-chart-card"><div class="module-chart-title">Transaction per Minute - 2026-06-02</div><div class="module-chart">${bars.map((h) => `<div class="module-chart-bar" style="height:${h}%"></div>`).join("")}</div></div>
+    ${moduleTable(["Time (HH:MM)", "Total", "Success", "Pending", "Reversed", "Success Rate", "Profit"], rows, { linkColumns: [0] })}
+  `;
+}
+
+const modulePages = {
+  "rejected-transaction": () => `
+    ${moduleHero(1, "Rejected Transaction", "Rejected transaction audit with account, destination, status, and value filters.")}
+    ${moduleMetrics([["Rejected Today", "858"], ["Top Reason", "service code invalid"], ["Main Account", "Telin"], ["Last Update", "17:11:05"]])}
+    ${moduleFilters([["Date", "02/06/2026", "date"], ["Account", ""], ["RefId", ""], ["Destination", ""]])}
+    ${moduleTable(["Time Stamp", "Username", "RefId", "Info", "Code", "Destination", "Status", "Value"], moduleRows.rejected, { alertFirst: true })}
+  `,
+  "transaction-route": () => `
+    ${moduleHero(2, "Transaction / Route", "Gateway route performance with success and reversed distribution.")}
+    ${moduleFilters([["Date", "02/06/2026", "date"], ["Account", "bkpay"]])}
+    ${moduleTable(["Gateway", "Code", "Gateway Code", "Counts", "Success", "Success Rate", "Reversed", "Reversed Rate"], moduleRows.transactionRoute, { alertFirst: true, linkColumns: [1, 2] })}
+  `,
+  "transaction-per-minute": renderTransactionPerMinutePage,
+  "product-list": () => `
+    ${moduleHero(4, "Service / List", "Product catalog with provider, category, active state, and last updater.", `<button class="btn btn-primary">Upload CSV</button><button class="btn btn-ghost">Template CSV</button><a class="module-action-link" href="#">Add New Service</a>`)}
+    ${moduleFilters([["Service Code", ""], ["Provider", ""], ["Category", ""]])}
+    ${moduleTable(["Category", "Code", "Description", "Denom", "Type", "Provider", "Active", "Last Update", "By"], moduleRows.productList, { linkColumns: [1] })}
+  `,
+  "product-route": () => `
+    ${moduleHero(5, "Service / Route List", "Route mapping by service code, account, and gateway.")}
+    ${moduleFilters([["Service Code", ""], ["Account", ""], ["Gateway", ""]])}
+    ${moduleTable(["Account", "Code", "Gateway"], moduleRows.productRoute, { linkColumns: [1] })}
+  `,
+  "check-price": () => `
+    ${moduleHero(6, "Service / Check Price", "Compare service price and availability across gateways.")}
+    ${moduleFilters([["Source", "Gateway"], ["Service Code", "S100"]])}
+    ${moduleTable(["Name", "Code", "Gateway Code", "Price", "Last Update", "By", "Available"], moduleRows.checkPrice, { goodFirst: true, linkColumns: [0] })}
+  `,
+  "gateway-list": () => `
+    ${moduleHero(7, "Gateway / List", "Gateway balance, H2H balance, activity, and update owner.", `<a class="module-action-link" href="#">Add New Gateway</a>`)}
+    ${moduleTable(["Name", "Url", "Active", "Balance", "H2H Balance", "Last Update", "By"], moduleRows.gatewayList, { linkColumns: [0] })}
+  `,
+  "process-list": () => `
+    ${moduleHero(8, "Gateway / Process List", "Server and gateway process health in a cleaner monitoring panel.")}
+    <pre class="module-terminal">17:21:01 up 113 days, 53 min, 0 users, load average: 0.03, 0.06, 0.02
+
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/vda1        24G   16G  8.3G  66% /
+/dev/sda        100G   35G   60G  38% /data
+
+PID     CPU  MEM  COMMAND
+224662  0.0  0.2  target/release/gw-bukalapak-token
+224724  0.0  0.1  target/release/gw-bukalapak-trx-pulsa
+224729  0.0  0.0  target/release/gw-telin
+224739  0.0  0.1  target/release/gw-mba
+325104  0.0  0.1  target/release/gw-smb
+326223  0.0  0.4  target/release/gw-kisel-apihub</pre>
+  `,
+  "member-list": () => `
+    ${moduleHero(9, "Account / List", "Member account list with IP addresses, balances, and update owner.", `<a class="module-action-link" href="#">Add New Account</a>`)}
+    ${moduleTable(["Customer Name", "Username", "ID", "IP Addresses", "Balance", "Min. Balance", "Last Update", "By"], moduleRows.memberList, { linkColumns: [1] })}
+  `,
+  "member-virtual": () => `
+    ${moduleHero(10, "Bank Virtual Accounts", "Virtual account payments with payment status and add-balance flag.")}
+    ${moduleFilters([["Date", "01/06/2026", "date"], ["VA Number", ""], ["Account", ""], ["Payment Status", ""], ["External Ref", ""]], "OK")}
+    ${moduleTable(["Created At", "Username", "ID", "PG Ref", "Bank", "VA Number", "Paid At", "Status", "Add Balance", "Synced"], moduleRows.memberVirtual)}
+  `,
+};
+
+function renderModulePage(view) {
+  const content = document.querySelector(".content");
+  if (!content) return;
+
+  if (view === "operation-overview") {
+    content.innerHTML = dashboardContentHtml;
+    const title = document.querySelector(".topbar-title");
+    if (title && dashboardTopbarTitleHtml) title.innerHTML = dashboardTopbarTitleHtml;
+    refreshDashboard();
+    renderAllAlerts();
+    renderPagination();
+    initCharts();
+    updateHourlyChartFromFilters();
+    updateSummaryStats();
+    return;
+  }
+
+  const render = modulePages[view];
+  if (!render) return;
+  content.innerHTML = `<div class="module-page fade-in">${render()}</div>`;
+  const title = document.querySelector(".topbar-title");
+  if (title) title.innerHTML = `${document.querySelector(`[data-view="${view}"] span`)?.textContent || "Module"} <span>02 Jun 2026</span>`;
+}
+
+function initModuleNavigation() {
+  const content = document.querySelector(".content");
+  if (content) dashboardContentHtml = content.innerHTML;
+  const title = document.querySelector(".topbar-title");
+  if (title) dashboardTopbarTitleHtml = title.innerHTML;
+
+  document.querySelectorAll("[data-view]").forEach((link) => {
+    link.addEventListener("click", (event) => {
+      event.preventDefault();
+      const view = link.dataset.view;
+      document.querySelectorAll(".nav-overview, .nav-subitem").forEach((item) => item.classList.remove("active"));
+      link.classList.add("active");
+      renderModulePage(view);
+    });
+  });
+}
+
 function refreshData() {
   const btn = document.querySelector(".btn-ghost");
   btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 0.7s linear infinite;"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg> Refreshing...`;
@@ -1584,6 +1796,7 @@ document.head.appendChild(spinStyle);
 
 document.addEventListener("DOMContentLoaded", () => {
   initSidebarGroups();
+  initModuleNavigation();
   seedCumulativeFinance();
   populateFilterOptions();
   renderTrx();
