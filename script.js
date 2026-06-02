@@ -614,6 +614,7 @@ function refreshDashboard() {
   updateHourlyChartFromFilters();
   updateSummaryStats();
   renderPagination();
+  syncPendingFilterCardState();
 }
 
 function applyDashboardFilters() {
@@ -627,6 +628,20 @@ function resetDashboardFilters() {
   currentPage = 1;
   syncFilterInputs();
   refreshDashboard();
+}
+
+function syncPendingFilterCardState() {
+  const pendingCard = document.querySelector(".stat-card.pending");
+  if (!pendingCard) return;
+  pendingCard.classList.toggle("pending-filter-active", filterState.status === "Pending");
+}
+
+function showPendingTransactions() {
+  filterState = { ...filterState, status: "Pending" };
+  currentPage = 1;
+  syncFilterInputs();
+  refreshDashboard();
+  document.querySelector(".trx-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 // Render traffic
