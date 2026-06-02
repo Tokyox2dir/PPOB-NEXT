@@ -1638,6 +1638,38 @@ const moduleRows = {
     ["01-06-2026 22:01:54", "quantum", "308", "019e83b4-a565-7e91-81a6-92c558f61a77", "Bank Central Asia", "111316394107285", "01-06-2026 22:03:56", "Success", "100.000.000", "true"],
     ["01-06-2026 21:53:52", "quantum", "307", "019e83ad-485b-7c6b-a7c9-5e05b90cf2db", "Bank Central Asia", "111316394107285", "01-06-2026 22:01:41", "Success", "100.000.000", "true"],
   ],
+  administrators: [
+    ["dwi", "Super Admin", "08-Apr 2026 15:33:04", "TRUE", "Fahri", "Edit"],
+    ["sarche", "Super Admin", "01-Oct 2025 22:57:24", "FALSE", "catherine", "Edit"],
+    ["fryan", "Sales", "14-Oct 2025 11:07:36", "TRUE", "Fahri", "Edit"],
+    ["Eko", "Super Admin", "30-Sep 2025 11:42:05", "TRUE", "Fahri", "Edit"],
+    ["Lee", "Super Admin", "01-Oct 2025 15:32:39", "FALSE", "Fahri", "Edit"],
+    ["Iqbal", "Super Admin", "14-Apr 2026 09:55:18", "TRUE", "Iqbal", "Edit"],
+  ],
+  accessLog: [
+    ["02-06-2026 18:37:04", "Dito", "/admin/log/?date=2026-06-02"],
+    ["02-06-2026 18:36:37", "Dito", "/admin/list?msg=&status=false"],
+    ["02-06-2026 18:36:20", "Iky", "/account/mutation/44/1"],
+    ["02-06-2026 18:36:17", "Iky", "/account/list?msg=Sukses+menambah+deposit"],
+    ["02-06-2026 18:36:07", "Dito", "/page/edit/9"],
+    ["02-06-2026 18:21:53", "Iky", "/transaction/list/1?date=2026-06-02"],
+  ],
+  pages: [
+    ["account/add", "13-Oct 2025 09:45:31", "Fahri", "Edit"],
+    ["account/add-service", "13-Oct 2025 10:15:37", "Fahri", "Edit"],
+    ["account/deposit", "13-Oct 2025 10:13:31", "Fahri", "Edit"],
+    ["account/list", "13-Oct 2025 09:45:15", "Fahri", "Edit"],
+    ["admin/add", "13-Oct 2025 10:19:44", "Fahri", "Edit"],
+    ["admin/change-password", "13-Oct 2025 10:21:20", "Fahri", "Edit"],
+    ["admin/list", "13-Oct 2025 10:18:25", "Fahri", "Edit"],
+    ["admin/log", "13-Oct 2025 10:18:46", "Fahri", "Edit"],
+    ["gateway/add", "13-Oct 2025 10:35:50", "Fahri", "Edit"],
+  ],
+  roles: [
+    ["Sales", "14-Oct 2025 11:04:39", "Fahri", "Edit"],
+    ["Admin", "14-Oct 2025 10:58:29", "Fahri", "Edit"],
+    ["Super Admin", "02-Jul 2025 17:42:45", "Fahri", "Edit"],
+  ],
 };
 
 function moduleStatusBadge(value) {
@@ -1738,6 +1770,33 @@ PID     CPU  MEM  COMMAND
     ${moduleHero(10, "Bank Virtual Accounts", "Virtual account payments with payment status and add-balance flag.")}
     ${moduleFilters([["Date", "01/06/2026", "date"], ["VA Number", ""], ["Account", ""], ["Payment Status", ""], ["External Ref", ""]], "OK")}
     ${moduleTable(["Created At", "Username", "ID", "PG Ref", "Bank", "VA Number", "Paid At", "Status", "Add Balance", "Synced"], moduleRows.memberVirtual)}
+  `,
+  "admin-administrators": () => `
+    ${moduleHero(1, "Administrator / List", "Manage admin users, roles, active status, and ownership.", `<a class="module-action-link" href="#">Add New Administrator</a>`)}
+    ${moduleMetrics([["Total Admins", "21"], ["Active", "19"], ["Inactive", "2"], ["Top Role", "Super Admin"]])}
+    ${moduleTable(["Name", "Role", "Last Update", "Active", "By", "Action"], moduleRows.administrators, { linkColumns: [0, 5] })}
+  `,
+  "admin-access-log": () => `
+    ${moduleHero(2, "Administrator / Log", "Trace admin activity by date, admin user, and accessed path.")}
+    ${moduleFilters([["Date", "02/06/2026", "date"], ["Admin", ""], ["Path", ""]])}
+    ${moduleTable(["Datetime", "Admin", "Path"], moduleRows.accessLog, { linkColumns: [2] })}
+  `,
+  "admin-change-password": () => `
+    ${moduleHero(3, "Administrator / Change My Password", "Update the current admin password with confirmation.")}
+    <div class="module-filter">
+      <div class="module-field"><label>Username</label><input type="text" value="Dito"></div>
+      <div class="module-field"><label>Password</label><input type="password" value=""></div>
+      <div class="module-field"><label>Confirm Password</label><input type="password" value=""></div>
+      <div class="module-filter-actions"><button class="btn btn-primary">Update</button></div>
+    </div>
+  `,
+  "admin-list-pages": () => `
+    ${moduleHero(4, "Page / List", "Registered admin pages and permission targets.", `<a class="module-action-link" href="#">Add New Page</a>`)}
+    ${moduleTable(["Name", "Last Update", "By", "Links"], moduleRows.pages, { linkColumns: [0, 3] })}
+  `,
+  "admin-list-role": () => `
+    ${moduleHero(5, "Role / List", "Role catalog for administrator permission groups.", `<a class="module-action-link" href="#">Add New Role</a>`)}
+    ${moduleTable(["Name", "Last Update", "By", "Action"], moduleRows.roles, { linkColumns: [0, 3] })}
   `,
 };
 
