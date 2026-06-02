@@ -1547,6 +1547,29 @@ function toggleSidebar() {
   }, 220);
 }
 
+function initSidebarGroups() {
+  document.querySelectorAll(".nav-section-title").forEach((title) => {
+    const section = title.closest(".nav-section");
+    if (!section) return;
+
+    title.setAttribute("role", "button");
+    title.setAttribute("tabindex", "0");
+    title.setAttribute("aria-expanded", String(!section.classList.contains("collapsed")));
+
+    const toggleGroup = () => {
+      section.classList.toggle("collapsed");
+      title.setAttribute("aria-expanded", String(!section.classList.contains("collapsed")));
+    };
+
+    title.addEventListener("click", toggleGroup);
+    title.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      toggleGroup();
+    });
+  });
+}
+
 function refreshData() {
   const btn = document.querySelector(".btn-ghost");
   btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 0.7s linear infinite;"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg> Refreshing...`;
@@ -1560,6 +1583,7 @@ spinStyle.textContent = "@keyframes spin { to { transform: rotate(360deg); } }";
 document.head.appendChild(spinStyle);
 
 document.addEventListener("DOMContentLoaded", () => {
+  initSidebarGroups();
   seedCumulativeFinance();
   populateFilterOptions();
   renderTrx();

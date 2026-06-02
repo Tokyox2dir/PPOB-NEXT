@@ -125,6 +125,14 @@ body.modal-open { overflow: hidden; }
   text-transform: uppercase;
   text-decoration: none;
 }
+.nav-section-title {
+  cursor: pointer;
+  user-select: none;
+}
+.nav-section-title:hover {
+  background: var(--bg3);
+  color: var(--text);
+}
 .nav-overview {
   margin-bottom: 12px;
 }
@@ -149,6 +157,16 @@ body.modal-open { overflow: hidden; }
   color: currentColor;
   opacity: 0.9;
   transform: rotate(180deg);
+  transition: transform 0.15s ease;
+}
+.nav-section.collapsed {
+  margin-bottom: 8px;
+}
+.nav-section.collapsed .nav-subitem {
+  display: none;
+}
+.nav-section.collapsed .nav-section-title .nav-chevron {
+  transform: rotate(0deg);
 }
 .nav-subitem {
   display: flex;
