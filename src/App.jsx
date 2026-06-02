@@ -359,45 +359,131 @@ function DashboardChart({ type, labels, datasets, options = {}, className = "" }
   );
 }
 
+const monitorRows = [
+  ["SYS-260602-8841", "BK PAY", "SMB", "S100", "08123450001", "17:18:03", "0.8", "Rp96.300", "Rp420", "OK", "Success"],
+  ["SYS-260602-8840", "Telin", "Indotel", "S1000", "08123450002", "17:17:41", "1.2", "Rp990.410", "Rp1.120", "Waiting supplier callback", "Pending"],
+  ["SYS-260602-8839", "SMB", "Telin", "DANAKH", "08123450003", "17:17:09", "0.5", "-", "-", "service code invalid", "Rejected"],
+  ["SYS-260602-8838", "Quantum", "Toplink", "GPYKH", "08123450004", "17:16:22", "0.7", "Rp12.450", "Rp210", "OK", "Success"],
+  ["SYS-260602-8837", "Toplink", "PlusLink", "S100", "08123450005", "17:15:55", "1.6", "Rp98.525", "Rp350", "Callback delayed", "Pending"],
+  ["SYS-260602-8836", "Redigame", "Bima Sakti", "ATF100", "08123450006", "17:15:02", "0.9", "Rp75.000", "Rp260", "OK", "Success"],
+  ["SYS-260602-8835", "BK PAY", "SMB", "PLN20", "08123450007", "17:14:44", "0.6", "Rp20.350", "Rp180", "OK", "Success"],
+  ["SYS-260602-8834", "HIGO", "Aviana", "GMS50", "08123450008", "17:14:10", "1.1", "Rp50.750", "Rp300", "Reversed by gateway", "Reversed"],
+  ["SYS-260602-8833", "Mitras", "Toplink", "DANA50", "08123450009", "17:13:52", "0.8", "Rp50.120", "Rp240", "OK", "Success"],
+  ["SYS-260602-8832", "ESA", "SMB", "OVO25", "08123450010", "17:13:30", "0.9", "Rp25.110", "Rp160", "OK", "Success"],
+];
+
+const monitorTraffic = [
+  ["BK PAY", "1,820", "1,540", "+18%", 82],
+  ["Telin", "1,322", "1,491", "-11%", 64],
+  ["SMB", "1,110", "980", "+13%", 58],
+  ["Quantum", "902", "860", "+5%", 46],
+];
+
+const monitorBalance = [
+  ["WARN", "Toplink", "Gateway", "80.4M", "100M", "warn"],
+  ["CRIT", "Telin", "Gateway", "96.3M", "150M", "critical"],
+];
+
+const monitorAlerts = {
+  stop: [
+    ["Telin", "S100", "Stop transaksi mendadak", "17:02"],
+    ["BK PAY", "DANAOPEN", "Callback terlambat", "17:11"],
+    ["SMB", "PLN20", "Spike reversal", "17:14"],
+  ],
+  product: [
+    ["critical", "iPLN / VSI", "Supplier callback: product close", "17:08"],
+    ["warn", "DANAKH / SMB", "RC 68 exceeded threshold", "17:13"],
+  ],
+  rugi: [["SYS-260602-8834", "HIGO", "GMS50", "Rp300", "17:14"]],
+};
+
+function FilterCombo({ label, placeholder, options, value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const filtered = options.filter((option) => option.toLowerCase().includes(query.toLowerCase()));
+
+  return (
+    <div className="filter-group">
+      <div className="filter-label">{label}</div>
+      <div className={`filter-combo ${open ? "open" : ""}`} data-placeholder={placeholder}>
+        <input type="hidden" value={value} readOnly />
+        <button className="filter-input filter-combo-toggle" type="button" onClick={() => setOpen((current) => !current)}>
+          <span>{value || placeholder}</span>
+        </button>
+        <div className="filter-combo-menu">
+          <input className="filter-combo-search" type="search" placeholder={`Search ${label.toLowerCase()}...`} value={query} onChange={(event) => setQuery(event.target.value)} />
+          <div className="filter-combo-options">
+            <button
+              className={`filter-combo-option ${value ? "" : "active"}`}
+              type="button"
+              onClick={() => {
+                onChange("");
+                setOpen(false);
+                setQuery("");
+              }}
+            >
+              {placeholder}
+            </button>
+            {filtered.map((option) => (
+              <button
+                className={`filter-combo-option ${value === option ? "active" : ""}`}
+                type="button"
+                key={option}
+                onClick={() => {
+                  onChange(option);
+                  setOpen(false);
+                  setQuery("");
+                }}
+              >
+                {option}
+              </button>
+            ))}
+            {!filtered.length && <div className="filter-combo-empty">No results</div>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CurrentTransactionPage() {
-  const [statusFilter, setStatusFilter] = useState("");
-  const trxRows = [
-    ["SYS-260602-8841", "BK PAY", "SMB", "S100", "08123450001", "17:18:03", "0.8", "Rp96.300", "Rp420", "OK", "Success"],
-    ["SYS-260602-8840", "Telin", "Indotel", "S1000", "08123450002", "17:17:41", "1.2", "Rp990.410", "Rp1.120", "Waiting supplier callback", "Pending"],
-    ["SYS-260602-8839", "SMB", "Telin", "DANAKH", "08123450003", "17:17:09", "0.5", "-", "-", "service code invalid", "Rejected"],
-    ["SYS-260602-8838", "Quantum", "Toplink", "GPYKH", "08123450004", "17:16:22", "0.7", "Rp12.450", "Rp210", "OK", "Success"],
-    ["SYS-260602-8837", "Toplink", "PlusLink", "S100", "08123450005", "17:15:55", "1.6", "Rp98.525", "Rp350", "Callback delayed", "Pending"],
-    ["SYS-260602-8836", "Redigame", "Bima Sakti", "ATF100", "08123450006", "17:15:02", "0.9", "Rp75.000", "Rp260", "OK", "Success"],
-    ["SYS-260602-8835", "BK PAY", "SMB", "PLN20", "08123450007", "17:14:44", "0.6", "Rp20.350", "Rp180", "OK", "Success"],
-    ["SYS-260602-8834", "HIGO", "Aviana", "GMS50", "08123450008", "17:14:10", "1.1", "Rp50.750", "Rp300", "Reversed by gateway", "Reversed"],
-    ["SYS-260602-8833", "Mitras", "Toplink", "DANA50", "08123450009", "17:13:52", "0.8", "Rp50.120", "Rp240", "OK", "Success"],
-    ["SYS-260602-8832", "ESA", "SMB", "OVO25", "08123450010", "17:13:30", "0.9", "Rp25.110", "Rp160", "OK", "Success"],
-  ];
-  const rows = statusFilter ? trxRows.filter((row) => row[10] === statusFilter) : trxRows;
-  const pendingCount = trxRows.filter((row) => row[10] === "Pending").length;
+  const [filters, setFilters] = useState({ account: "", gateway: "", provider: "", status: "", clientId: "", supplierId: "", product: "" });
+  const [activeAlert, setActiveAlert] = useState("stop");
+  const pendingCount = monitorRows.filter((row) => row[10] === "Pending").length;
+  const rows = monitorRows.filter((row) => {
+    if (filters.account && row[1] !== filters.account) return false;
+    if (filters.gateway && row[2] !== filters.gateway) return false;
+    if (filters.status && row[10] !== filters.status) return false;
+    if (filters.product && !row[3].toLowerCase().includes(filters.product.toLowerCase())) return false;
+    if (filters.clientId && !row[0].toLowerCase().includes(filters.clientId.toLowerCase())) return false;
+    if (filters.supplierId && !`${row[2]}-${row[3]}`.toLowerCase().includes(filters.supplierId.toLowerCase())) return false;
+    return true;
+  });
+  const setFilter = (key, value) => setFilters((current) => ({ ...current, [key]: value }));
+  const resetFilters = () => setFilters({ account: "", gateway: "", provider: "", status: "", clientId: "", supplierId: "", product: "" });
 
   return (
     <div className="content">
       <div className="filter-bar fade-in fixed-elem">
         <div className="filter-group"><div className="filter-label">Start Date</div><input className="filter-input date-input" type="datetime-local" defaultValue="2026-05-15T00:00" /></div>
         <div className="filter-group"><div className="filter-label">End Date</div><input className="filter-input date-input" type="datetime-local" defaultValue="2026-05-15T23:59" /></div>
-        <div className="filter-group"><div className="filter-label">Account</div><select className="filter-input"><option>All Accounts</option><option>BK PAY</option><option>Telin</option><option>SMB</option></select></div>
-        <div className="filter-group"><div className="filter-label">Client ID</div><input className="filter-input search-input" type="search" placeholder="Search client ID" /></div>
-        <div className="filter-group"><div className="filter-label">Gateway</div><select className="filter-input"><option>All Gateways</option><option>SMB</option><option>Toplink</option><option>Indotel</option></select></div>
-        <div className="filter-group"><div className="filter-label">Supplier ID</div><input className="filter-input search-input" type="search" placeholder="Search supplier ID" /></div>
-        <div className="filter-group"><div className="filter-label">Provider</div><select className="filter-input"><option>All Providers</option><option>PDAM</option><option>TELCO</option><option>Games</option></select></div>
-        <div className="filter-group"><div className="filter-label">Product/Service</div><input className="filter-input search-input" type="search" placeholder="Search product" /></div>
-        <div className="filter-group"><div className="filter-label">Status</div><select className="filter-input" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="">All Statuses</option><option>Success</option><option>Pending</option><option>Rejected</option><option>Reversed</option></select></div>
+        <FilterCombo label="Account" placeholder="All Accounts" options={["BK PAY", "ESA", "HIGO", "Mitras", "Quantum", "Redigame", "SMB", "Telin", "Toplink"]} value={filters.account} onChange={(value) => setFilter("account", value)} />
+        <div className="filter-group"><div className="filter-label">Client ID</div><input className="filter-input search-input" type="search" placeholder="Search client ID" value={filters.clientId} onChange={(event) => setFilter("clientId", event.target.value)} /></div>
+        <FilterCombo label="Gateway" placeholder="All Gateways" options={["Aviana", "Bima Sakti", "Indotel", "PlusLink", "SMB", "Telin", "Toplink"]} value={filters.gateway} onChange={(value) => setFilter("gateway", value)} />
+        <div className="filter-group"><div className="filter-label">Supplier ID</div><input className="filter-input search-input" type="search" placeholder="Search supplier ID" value={filters.supplierId} onChange={(event) => setFilter("supplierId", event.target.value)} /></div>
+        <FilterCombo label="Provider" placeholder="All Providers" options={["Bank", "E-Wallet", "Games", "PDAM", "PLN", "TELCO"]} value={filters.provider} onChange={(value) => setFilter("provider", value)} />
+        <div className="filter-group"><div className="filter-label">Product/Service</div><input className="filter-input search-input" type="search" placeholder="Search product" value={filters.product} onChange={(event) => setFilter("product", event.target.value)} /></div>
+        <FilterCombo label="Status" placeholder="All Statuses" options={["Pending", "Success", "Rejected", "Reversed"]} value={filters.status} onChange={(value) => setFilter("status", value)} />
         <div className="filter-actions">
           <button className="btn btn-primary" type="button">Search</button>
-          <button className="btn btn-ghost" type="button" onClick={() => setStatusFilter("")}>Reset</button>
+          <button className="btn btn-ghost" type="button" onClick={resetFilters}>Reset</button>
         </div>
       </div>
 
       <div className="stats-row fixed-elem">
         <div className="stat-card total fade-in"><div className="stat-label">Total Transactions</div><div className="stat-value total">7,615</div><div className="stat-pct">Today</div></div>
         <div className="stat-card success fade-in"><div className="stat-label">Success</div><div className="stat-value success">6,755</div><div className="stat-pct">88.7%</div></div>
-        <button className="stat-card pending fade-in stat-card-button" type="button" onClick={() => setStatusFilter("Pending")}><div className="stat-label">Pending</div><div className="stat-value pending">{pendingCount}</div><div className="stat-pct">0.03%</div></button>
+        <button className={`stat-card pending fade-in stat-card-button ${filters.status === "Pending" ? "pending-filter-active" : ""}`} type="button" onClick={() => setFilter("status", "Pending")}><div className="stat-label">Pending</div><div className="stat-value pending">{pendingCount}</div><div className="stat-pct">0.03%</div></button>
         <div className="stat-card reversed fade-in"><div className="stat-label">Reversed</div><div className="stat-value reversed">858</div><div className="stat-pct">11.3%</div></div>
         <div className="stat-card revenue fade-in"><div className="stat-label">Revenue</div><div className="stat-value revenue">Rp5.69B</div><div className="stat-pct">Today</div></div>
         <div className="stat-card margin fade-in"><div className="stat-label">Margin</div><div className="stat-value margin">Rp9.96M</div><div className="stat-pct">Today</div></div>
@@ -433,7 +519,7 @@ function CurrentTransactionPage() {
                   type="doughnut"
                   className="donut-wrap"
                   labels={["Success", "Reversed", "Pending", "Failed"]}
-                  datasets={[{ data: [6755, 858, pendingCount, 3], backgroundColor: ["#22c55e", "#f97316", "#f59e0b", "#ef4444"], borderWidth: 0 }]}
+                  datasets={[{ data: [6755, 858, pendingCount, 0], backgroundColor: ["#22c55e", "#f97316", "#f59e0b", "#ef4444"], borderWidth: 0 }]}
                   options={{ cutout: "72%", layout: { padding: 6 }, plugins: { legend: { display: false }, tooltip: { backgroundColor: "#13161e" } } }}
                 />
               </div>
@@ -443,7 +529,7 @@ function CurrentTransactionPage() {
           <div className="card fade-in flex-fill trx-card">
             <div className="card-header fixed-elem">
               <div className="card-title">Transaction List</div>
-              <span>{rows.length.toLocaleString("id-ID")} rows - Page <b>1</b></span>
+              <span id="trx-card-summary">{filters.status ? rows.length.toLocaleString("id-ID") : "7,615"} rows - Page <b>1</b></span>
             </div>
             <div className="table-wrap scrollable flex-fill trx-scroll">
               <table className="trx-table">
@@ -452,14 +538,35 @@ function CurrentTransactionPage() {
                   {rows.map((row, index) => (
                     <tr key={row[0]} className={row[10] === "Pending" ? "trx-row-pending" : ""}>
                       <td>{index + 1}</td>
-                      {row.map((cell, cellIndex) => <td key={`${row[0]}-${cellIndex}`}>{cellIndex === 10 ? <span className={`status-badge ${cell.toLowerCase()}`}>{cell}</span> : cell}</td>)}
+                      <td><button className="trx-id trx-id-btn" type="button">{row[0]}</button></td>
+                      <td><span className="client-tag">{row[1]}</span></td>
+                      <td><span className="sup-badge">[{row[2]}]</span></td>
+                      <td className="mono-sm">{row[3]}</td>
+                      <td className="mono-sm">{row[4]}</td>
+                      <td className="request-time">{row[5]}</td>
+                      <td className={`duration-time ${Number(row[6]) > 1 ? "slow" : ""}`}>{row[6]}</td>
+                      <td className="price-text">{row[7]}</td>
+                      <td className="margin-text">{row[8]}</td>
+                      <td><span className="reason-text">{row[9]}</span></td>
+                      <td><span className={`status-pill ${row[10].toLowerCase()}`}>{row[10]}</span></td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
             <div className="pagination fixed-elem">
-              <div className="page-info">Showing <b>1-{rows.length}</b> of <b>{rows.length}</b> transactions</div>
+              <div className="page-info">
+                <span>Showing <b>1-{rows.length}</b> of <b>{filters.status ? rows.length : "7,615"}</b> transactions</span>
+                <label className="page-size-control">Rows
+                  <select defaultValue="10">
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="75">75</option>
+                    <option value="100">100</option>
+                  </select>
+                </label>
+              </div>
               <div className="page-btns"><button className="page-btn active" type="button">1</button><button className="page-btn" type="button">2</button><button className="page-btn" type="button">3</button></div>
             </div>
           </div>
@@ -472,13 +579,14 @@ function CurrentTransactionPage() {
               <table className="traffic-table">
                 <thead><tr><th>Client</th><th>Today</th><th>Yesterday</th><th>Delta</th><th>Bar</th></tr></thead>
                 <tbody>
-                  {[
-                    ["BK PAY", "1,820", "1,540", "+18%", 82],
-                    ["Telin", "1,322", "1,491", "-11%", 64],
-                    ["SMB", "1,110", "980", "+13%", 58],
-                    ["Quantum", "902", "860", "+5%", 46],
-                  ].map((row) => (
-                    <tr key={row[0]}><td>{row[0]}</td><td>{row[1]}</td><td>{row[2]}</td><td className={String(row[3]).startsWith("+") ? "text-success" : "text-danger"}>{row[3]}</td><td><div className="traffic-bar"><span style={{ width: `${row[4]}%` }} /></div></td></tr>
+                  {monitorTraffic.map((row) => (
+                    <tr key={row[0]}>
+                      <td><span className="traffic-client"><span className={`live-dot ${String(row[3]).startsWith("+") ? "hot" : "drop"}`} />{row[0]}</span></td>
+                      <td>{row[1]}</td>
+                      <td>{row[2]}</td>
+                      <td><span className={`delta ${String(row[3]).startsWith("+") ? "up" : "down"}`}>{row[3]}</span></td>
+                      <td><div className="mini-bar"><span className="mini-bar-fill" style={{ width: `${row[4]}%`, background: String(row[3]).startsWith("+") ? "var(--success)" : "var(--danger)" }} /></div></td>
+                    </tr>
                   ))}
                 </tbody>
               </table>
@@ -491,8 +599,15 @@ function CurrentTransactionPage() {
               <table className="alert-table balance-table">
                 <thead><tr><th>Level</th><th>Account</th><th>Type</th><th>Balance</th><th>Threshold</th></tr></thead>
                 <tbody>
-                  <tr><td><span className="severity warn">WARN</span></td><td>Toplink</td><td>Gateway</td><td>80.4M</td><td>100M</td></tr>
-                  <tr><td><span className="severity critical">CRIT</span></td><td>Telin</td><td>Gateway</td><td>96.3M</td><td>150M</td></tr>
+                  {monitorBalance.map((row) => (
+                    <tr key={row[1]}>
+                      <td><span className={`alert-badge ${row[5]}`}>{row[0]}</span></td>
+                      <td><span className="balance-account">{row[1]}</span></td>
+                      <td>{row[2]}</td>
+                      <td><span className={`balance-val ${row[5]}`}>{row[3]}</span></td>
+                      <td>{row[4]}<div className="balance-meter"><span className={`balance-meter-fill ${row[5]}`} style={{ width: row[5] === "critical" ? "64%" : "80%" }} /></div></td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -505,18 +620,36 @@ function CurrentTransactionPage() {
                 <div style={{ display: "flex", gap: 5 }}><span className="alert-count-badge danger">2 critical</span><span className="alert-count-badge warn">3 warn</span></div>
               </div>
               <div className="alert-tabs">
-                <button className="alert-tab active" type="button">Client Info <span className="tab-badge" style={{ background: "var(--danger-bg)", color: "var(--danger)" }}>2</span></button>
-                <button className="alert-tab" type="button">Incidents <span className="tab-badge" style={{ background: "var(--warn-bg)", color: "var(--warn)" }}>2</span></button>
-                <button className="alert-tab" type="button">Loss Trx <span className="tab-badge" style={{ background: "var(--pending-bg)", color: "var(--pending)" }}>1</span></button>
+                <button className={`alert-tab ${activeAlert === "stop" ? "active" : ""}`} type="button" onClick={() => setActiveAlert("stop")}>Client Info <span className="tab-badge" style={{ background: "var(--danger-bg)", color: "var(--danger)" }}>2</span></button>
+                <button className={`alert-tab ${activeAlert === "product" ? "active" : ""}`} type="button" onClick={() => setActiveAlert("product")}>Incidents <span className="tab-badge" style={{ background: "var(--warn-bg)", color: "var(--warn)" }}>2</span></button>
+                <button className={`alert-tab ${activeAlert === "rugi" ? "active" : ""}`} type="button" onClick={() => setActiveAlert("rugi")}>Loss Trx <span className="tab-badge" style={{ background: "var(--pending-bg)", color: "var(--pending)" }}>1</span></button>
               </div>
             </div>
-            <div className="alert-panel active scrollable flex-fill alert-scroll">
+            <div className={`alert-panel ${activeAlert === "stop" ? "active" : ""} scrollable flex-fill alert-scroll`}>
               <table className="alert-table">
                 <thead><tr><th>Client</th><th>Product</th><th>Detail</th><th>Since</th></tr></thead>
                 <tbody>
-                  <tr><td>Telin</td><td>S100</td><td>Stop transaksi mendadak</td><td>17:02</td></tr>
-                  <tr><td>BK PAY</td><td>DANAOPEN</td><td>Callback terlambat</td><td>17:11</td></tr>
-                  <tr><td>SMB</td><td>PLN20</td><td>Spike reversal</td><td>17:14</td></tr>
+                  {monitorAlerts.stop.map((row) => <tr key={row.join("-")}>{row.map((cell) => <td key={cell}>{cell}</td>)}</tr>)}
+                </tbody>
+              </table>
+            </div>
+            <div className={`alert-panel ${activeAlert === "product" ? "active" : ""} scrollable flex-fill alert-scroll`}>
+              <table className="alert-table">
+                <thead><tr><th>Level</th><th>Product / Supplier</th><th>Description</th><th>Time</th></tr></thead>
+                <tbody>
+                  {monitorAlerts.product.map((row) => (
+                    <tr key={row.join("-")}><td><span className={`alert-badge ${row[0]}`}>{row[0]}</span></td><td>{row[1]}</td><td>{row[2]}</td><td>{row[3]}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className={`alert-panel ${activeAlert === "rugi" ? "active" : ""} scrollable flex-fill alert-scroll`}>
+              <table className="alert-table">
+                <thead><tr><th>TRX ID</th><th>Client</th><th>Product</th><th>Loss</th><th>Time</th></tr></thead>
+                <tbody>
+                  {monitorAlerts.rugi.map((row) => (
+                    <tr key={row[0]}><td className="mono-sm">{row[0]}</td><td>{row[1]}</td><td>{row[2]}</td><td><span className="rugi-val">{row[3]}</span></td><td>{row[4]}</td></tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -640,7 +773,7 @@ export default function App() {
     <div className={`layout ${sidebarHidden ? "sidebar-hidden" : ""}`}>
       <Sidebar activeView={activeView} onNavigate={navigate} collapsed={sidebarHidden} />
       <main className="main">
-        <Topbar title={meta.label} onToggleSidebar={() => setSidebarHidden((value) => !value)} onToggleTheme={() => setTheme((value) => (value === "dark" ? "light" : "dark"))} theme={theme} />
+        <Topbar title={activeView === "current-transaction" ? "Transaction / List" : meta.label} onToggleSidebar={() => setSidebarHidden((value) => !value)} onToggleTheme={() => setTheme((value) => (value === "dark" ? "light" : "dark"))} theme={theme} />
         {page}
       </main>
     </div>
