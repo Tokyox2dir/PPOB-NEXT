@@ -1576,7 +1576,9 @@ function initSidebarGroups() {
   document.querySelectorAll(".nav-section-title").forEach((title) => {
     const section = title.closest(".nav-section");
     if (!section) return;
-    section.classList.toggle("collapsed", !section.querySelector(".nav-subitem.active"));
+    const isActiveSection = Boolean(section.querySelector(".nav-subitem.active"));
+    section.classList.toggle("collapsed", !isActiveSection);
+    section.classList.toggle("nav-section-active", isActiveSection);
 
     title.setAttribute("role", "button");
     title.setAttribute("tabindex", "0");
@@ -1600,6 +1602,7 @@ function syncSidebarOpenSection() {
   document.querySelectorAll(".nav-section").forEach((section) => {
     const isActiveSection = Boolean(section.querySelector(".nav-subitem.active"));
     section.classList.toggle("collapsed", !isActiveSection);
+    section.classList.toggle("nav-section-active", isActiveSection);
     const title = section.querySelector(".nav-section-title");
     if (title) title.setAttribute("aria-expanded", String(isActiveSection));
   });
@@ -2090,6 +2093,23 @@ function renderModulePage(view) {
   if (view.startsWith("report-")) initReportCharts(view.replace("report-", ""));
 }
 
+function getInitialView() {
+  const queryView = new URLSearchParams(window.location.search).get("view");
+  if (queryView) return queryView;
+
+  const file = window.location.pathname.split("/").pop().replace(/\.html$/, "");
+  return file && file !== "index" ? file : "current-transaction";
+}
+
+function setActiveSidebarView(view) {
+  const fallbackView = modulePages[view] || view === "current-transaction" ? view : "current-transaction";
+  document.querySelectorAll(".nav-subitem").forEach((item) => item.classList.remove("active"));
+  const activeLink = document.querySelector(`.nav-subitem[data-view="${fallbackView}"]`);
+  if (activeLink) activeLink.classList.add("active");
+  syncSidebarOpenSection();
+  return fallbackView;
+}
+
 function initModuleNavigation() {
   const content = document.querySelector(".content");
   if (content) dashboardContentHtml = content.innerHTML;
@@ -2100,12 +2120,19 @@ function initModuleNavigation() {
     link.addEventListener("click", (event) => {
       event.preventDefault();
       const view = link.dataset.view;
-      document.querySelectorAll(".nav-subitem").forEach((item) => item.classList.remove("active"));
-      link.classList.add("active");
-      syncSidebarOpenSection();
-      renderModulePage(view);
+      const nextUrl = link.getAttribute("href") || `${view}.html`;
+      if (nextUrl !== window.location.pathname.split("/").pop()) {
+        window.history.pushState({}, "", nextUrl);
+      }
+      renderModulePage(setActiveSidebarView(view));
     });
   });
+
+  window.addEventListener("popstate", () => {
+    renderModulePage(setActiveSidebarView(getInitialView()));
+  });
+
+  renderModulePage(setActiveSidebarView(getInitialView()));
 }
 
 function updateLiveClock() {
