@@ -529,6 +529,29 @@ body.modal-open { overflow: hidden; }
 .topbar-title { font-family: var(--mono); font-size: 13px; font-weight: 800; color: var(--text); flex: 1; }
 .topbar-title span { color: var(--text2); font-weight: 700; margin-left: 6px; }
 .topbar-actions { display: flex; align-items: center; gap: 10px; }
+.live-clock {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  background: var(--bg3);
+  color: var(--text);
+  font: 800 12px var(--mono);
+}
+.live-clock .live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 12px rgba(34,197,94,0.7);
+}
+.theme-toggle {
+  min-width: 118px;
+  justify-content: center;
+}
 .sidebar-toggle {
   width: 34px;
   height: 34px;

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TRX Monitor - Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,300&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=34">
+  <link rel="stylesheet" href="style.css?v=35">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   </head>
   <body>
@@ -135,12 +135,6 @@
           </a>
         </div>
       </nav>
-      <div class="sidebar-bottom">
-        <div class="nav-item" style="cursor:pointer;" onclick="toggleTheme()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="theme-icon"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.41 1.41M18.36 18.36l1.41 1.41M1 12h2M21 12h2M4.22 19.78l1.41-1.41M18.36 5.64l1.41-1.41"/></svg>
-          <span id="theme-label">Light Mode</span>
-        </div>
-      </div>
     </aside>
 
     <div class="main">
@@ -150,12 +144,13 @@
         </button>
         <div class="topbar-title">Transaction / List <span>15 May 2026</span></div>
         <div class="topbar-actions">
-          <div class="badge-live">LIVE</div>
-          <button class="btn btn-ghost" onclick="refreshData()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg> Refresh
-          </button>
-          <button class="btn btn-primary">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export
+          <div class="live-clock" aria-label="Live clock">
+            <span class="live-dot"></span>
+            <span id="live-clock">--:--:--</span>
+          </div>
+          <button class="btn btn-ghost theme-toggle" type="button" onclick="toggleTheme()" aria-label="Toggle theme">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="theme-icon"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.41 1.41M18.36 18.36l1.41 1.41M1 12h2M21 12h2M4.22 19.78l1.41-1.41M18.36 5.64l1.41-1.41"/></svg>
+            <span id="theme-label">Light Mode</span>
           </button>
         </div>
       </div>
@@ -360,6 +355,6 @@
     </div>
   </div>
 
-  <script src="script.js?v=34"></script>
+  <script src="script.js?v=35"></script>
   </body>
   </html>

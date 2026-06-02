@@ -1553,9 +1553,8 @@ function toggleTheme() {
   const html = document.documentElement;
   const isDark = html.getAttribute("data-theme") === "dark";
   html.setAttribute("data-theme", isDark ? "light" : "dark");
-  document.getElementById("theme-label").textContent = isDark
-    ? "Dark Mode"
-    : "Light Mode";
+  const label = document.getElementById("theme-label");
+  if (label) label.textContent = isDark ? "Dark Mode" : "Light Mode";
   updateChartColors();
 }
 
@@ -1577,6 +1576,7 @@ function initSidebarGroups() {
   document.querySelectorAll(".nav-section-title").forEach((title) => {
     const section = title.closest(".nav-section");
     if (!section) return;
+    section.classList.toggle("collapsed", !section.querySelector(".nav-subitem.active"));
 
     title.setAttribute("role", "button");
     title.setAttribute("tabindex", "0");
@@ -1593,6 +1593,15 @@ function initSidebarGroups() {
       event.preventDefault();
       toggleGroup();
     });
+  });
+}
+
+function syncSidebarOpenSection() {
+  document.querySelectorAll(".nav-section").forEach((section) => {
+    const isActiveSection = Boolean(section.querySelector(".nav-subitem.active"));
+    section.classList.toggle("collapsed", !isActiveSection);
+    const title = section.querySelector(".nav-section-title");
+    if (title) title.setAttribute("aria-expanded", String(isActiveSection));
   });
 }
 
@@ -2093,17 +2102,26 @@ function initModuleNavigation() {
       const view = link.dataset.view;
       document.querySelectorAll(".nav-subitem").forEach((item) => item.classList.remove("active"));
       link.classList.add("active");
+      syncSidebarOpenSection();
       renderModulePage(view);
     });
   });
 }
 
-function refreshData() {
-  const btn = document.querySelector(".btn-ghost");
-  btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 0.7s linear infinite;"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg> Refreshing...`;
-  setTimeout(() => {
-    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg> Refresh`;
-  }, 1200);
+function updateLiveClock() {
+  const clock = document.getElementById("live-clock");
+  if (!clock) return;
+  clock.textContent = new Date().toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+}
+
+function startLiveClock() {
+  updateLiveClock();
+  setInterval(updateLiveClock, 1000);
 }
 
 const spinStyle = document.createElement("style");
@@ -2113,6 +2131,7 @@ document.head.appendChild(spinStyle);
 document.addEventListener("DOMContentLoaded", () => {
   initSidebarGroups();
   initModuleNavigation();
+  startLiveClock();
   seedCumulativeFinance();
   populateFilterOptions();
   renderTrx();
