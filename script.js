@@ -1583,6 +1583,8 @@ function initSidebarGroups() {
 
 let dashboardContentHtml = "";
 let dashboardTopbarTitleHtml = "";
+let reportRevenueChart = null;
+let reportStatusChart = null;
 
 const moduleRows = {
   rejected: [
@@ -1734,52 +1736,23 @@ function renderTransactionPerMinutePage() {
   `;
 }
 
-function reportVisual(labels, heights, stackHeights) {
-  return `
-    <div class="report-layout">
-      <div class="report-card">
-        <div class="report-card-header">
-          <div class="report-card-title">Revenue / Cost / Margin</div>
-          <div class="report-card-note">Revenue trend</div>
-        </div>
-        <div class="report-lines">
-          ${labels.map((label, index) => `<div class="report-point"><div class="report-bar" style="height:${heights[index]}%"></div><div class="report-label">${escapeHtml(label)}</div></div>`).join("")}
-        </div>
-      </div>
-      <div class="report-card">
-        <div class="report-card-header">
-          <div class="report-card-title">Counts by Status</div>
-          <div class="report-card-note">Success, reversed, pending</div>
-        </div>
-        <div class="report-stack">
-          ${labels.map((label, index) => {
-            const h = stackHeights[index];
-            return `<div class="report-stack-col" title="${escapeHtml(label)}">
-              <div class="report-segment reversed" style="height:${Math.max(5, h * 0.12)}%"></div>
-              <div class="report-segment pending" style="height:${Math.max(3, h * 0.03)}%"></div>
-              <div class="report-segment success" style="height:${Math.max(12, h)}%"></div>
-              <div class="report-label">${escapeHtml(label)}</div>
-            </div>`;
-          }).join("")}
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-function renderReportPage(type) {
-  const config = {
+function getReportConfig(type) {
+  return {
     monthly: {
       shot: 1,
       title: "Monthly Report",
       subtitle: "Revenue, cost, margin, and status distribution across months.",
       filters: [["Year", "2026"], ["Account", ""], ["Gateway (Supplier)", ""], ["Service Code", ""]],
       labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-      heights: [18, 16, 25, 66, 92, 24],
-      stacks: [28, 24, 36, 74, 96, 22],
+      traffic: [70100, 60894, 109593, 335949, 425620, 42004],
+      revenue: [3.9, 4.1, 8.4, 36.5, 54.5, 5.7],
+      cost: [3.92, 4.13, 8.39, 36.45, 54.36, 5.68],
+      margin: [0.010, 0.006, 0.016, 0.062, 0.102, 0.010],
+      reversed: [6004, 3798, 8263, 18361, 18119, 2236],
+      pending: [160, 90, 120, 310, 430, 52],
       rows: moduleRows.reportMonthly,
       peak: "May 2026",
-      peakValue: "Rp54.4B",
+      peakValue: "425,620 traffic",
     },
     daily: {
       shot: 2,
@@ -1787,34 +1760,159 @@ function renderReportPage(type) {
       subtitle: "Daily settlement view for selected month and gateway.",
       filters: [["Month", "Jun"], ["Year", "2026"], ["Account", ""], ["Gateway (Supplier)", ""], ["Service Code", ""]],
       labels: ["Jun 01", "Jun 02"],
-      heights: [92, 43],
-      stacks: [88, 42],
+      traffic: [28682, 13340],
+      revenue: [3.87, 1.81],
+      cost: [3.87, 1.81],
+      margin: [0.0068, 0.0032],
+      reversed: [1543, 693],
+      pending: [38, 17],
       rows: moduleRows.reportDaily,
       peak: "2026-06-01",
-      peakValue: "27,139 trx",
+      peakValue: "28,682 traffic",
     },
     hourly: {
       shot: 3,
       title: "Hourly Report",
       subtitle: "Hourly traffic profile and peak transaction window.",
       filters: [["Date", "02/06/2026", "date"], ["Account", ""], ["Gateway (Supplier)", ""], ["Service Code", ""]],
-      labels: ["13", "14", "15", "16", "17", "18"],
-      heights: [36, 42, 55, 61, 72, 88],
-      stacks: [38, 46, 58, 66, 80, 92],
+      labels: ["00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18"],
+      traffic: [1956, 1424, 702, 66, 51, 104, 218, 207, 274, 923, 1195, 751, 640, 499, 590, 812, 809, 1095, 1038],
+      revenue: [220, 204, 132, 14, 18, 21, 43, 40, 52, 103, 166, 96, 71, 60, 66, 106, 98, 119, 273],
+      cost: [219, 203, 131, 14, 18, 21, 43, 40, 52, 102, 165, 95, 70, 60, 65, 106, 97, 118, 273],
+      margin: [0.19, 0.17, 0.12, 0.02, 0.02, 0.04, 0.08, 0.07, 0.09, 0.18, 0.26, 0.15, 0.12, 0.12, 0.15, 0.21, 0.22, 0.25, 0.22],
+      reversed: [288, 57, 31, 2, 1, 3, 8, 6, 10, 34, 39, 19, 16, 13, 21, 32, 30, 51, 55],
+      pending: [2, 0, 1, 0, 0, 0, 1, 0, 2, 1, 2, 1, 1, 0, 1, 1, 0, 2, 3],
       rows: moduleRows.reportHourly,
-      peak: "18:00",
-      peakValue: "983 success",
+      peak: "00:00",
+      peakValue: "1,956 traffic",
     },
   }[type];
+}
+
+function reportVisual() {
+  return `
+    <div class="report-layout">
+      <div class="report-card">
+        <div class="report-card-header">
+          <div class="report-card-title">Revenue / Cost / Margin</div>
+          <div class="report-card-note">Revenue trend</div>
+        </div>
+        <div class="report-canvas-wrap">
+          <canvas id="reportRevenueChart"></canvas>
+        </div>
+      </div>
+      <div class="report-card">
+        <div class="report-card-header">
+          <div class="report-card-title">Counts by Status</div>
+          <div class="report-card-note">Success, reversed, pending</div>
+        </div>
+        <div class="report-canvas-wrap">
+          <canvas id="reportStatusChart"></canvas>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderReportPage(type) {
+  const config = getReportConfig(type);
 
   return `
     ${moduleHero(config.shot, config.title, config.subtitle, `<button class="btn btn-primary">Export CSV</button><button class="btn btn-ghost">Download PDF</button>`)}
     ${moduleMetrics([["Peak", config.peak], ["Peak Value", config.peakValue], ["Success Rate", "94.81%"], ["Margin", "0.18%"]])}
     ${moduleFilters(config.filters)}
     <div class="report-insight"><strong>Peak transaksi:</strong><span>${escapeHtml(config.peak)} menjadi titik tertinggi pada laporan ini, dengan tren success yang masih stabil.</span></div>
-    ${reportVisual(config.labels, config.heights, config.stacks)}
+    ${reportVisual()}
     ${moduleTable([type === "hourly" ? "Hour" : type === "daily" ? "Date" : "Month", "Success", "Success Rate", "Reversed", "Revenue", "Cost", "Margin"], config.rows)}
   `;
+}
+
+function initReportCharts(type) {
+  const config = getReportConfig(type);
+  const revenueCanvas = document.getElementById("reportRevenueChart");
+  const statusCanvas = document.getElementById("reportStatusChart");
+  if (!config || !revenueCanvas || !statusCanvas || typeof Chart === "undefined") return;
+
+  if (reportRevenueChart) reportRevenueChart.destroy();
+  if (reportStatusChart) reportStatusChart.destroy();
+
+  const c = getChartColors();
+  const success = config.traffic.map((total, index) => Math.max(0, total - config.reversed[index] - config.pending[index]));
+
+  reportRevenueChart = new Chart(revenueCanvas.getContext("2d"), {
+    type: "line",
+    data: {
+      labels: config.labels,
+      datasets: [
+        {
+          label: "Traffic",
+          data: config.traffic,
+          borderColor: "#4f8cff",
+          backgroundColor: "rgba(79,140,255,0.14)",
+          borderWidth: 3,
+          tension: 0.38,
+          fill: true,
+          yAxisID: "y",
+        },
+        {
+          label: "Revenue",
+          data: config.revenue,
+          borderColor: "#22c55e",
+          backgroundColor: "rgba(34,197,94,0.08)",
+          borderWidth: 2,
+          tension: 0.35,
+          yAxisID: "y1",
+        },
+        {
+          label: "Margin",
+          data: config.margin,
+          borderColor: "#f59e0b",
+          backgroundColor: "rgba(245,158,11,0.08)",
+          borderWidth: 2,
+          tension: 0.35,
+          yAxisID: "y1",
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: "index", intersect: false },
+      plugins: {
+        legend: { labels: { color: c.tick, font: { weight: 800 } } },
+        tooltip: { backgroundColor: c.tooltip },
+      },
+      scales: {
+        x: { grid: { color: c.grid }, ticks: { color: c.tick } },
+        y: { grid: { color: c.grid }, ticks: { color: c.tick }, title: { display: true, text: "Traffic", color: c.tick } },
+        y1: { position: "right", grid: { display: false }, ticks: { color: c.tick }, title: { display: true, text: "Rp / Margin", color: c.tick } },
+      },
+    },
+  });
+
+  reportStatusChart = new Chart(statusCanvas.getContext("2d"), {
+    type: "bar",
+    data: {
+      labels: config.labels,
+      datasets: [
+        { label: "Success", data: success, backgroundColor: "#22c55e", borderRadius: 5 },
+        { label: "Reversed", data: config.reversed, backgroundColor: "#f97316", borderRadius: 5 },
+        { label: "Pending", data: config.pending, backgroundColor: "#f59e0b", borderRadius: 5 },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: c.tick, font: { weight: 800 } } },
+        tooltip: { backgroundColor: c.tooltip },
+      },
+      scales: {
+        x: { stacked: true, grid: { color: c.grid }, ticks: { color: c.tick } },
+        y: { stacked: true, grid: { color: c.grid }, ticks: { color: c.tick }, title: { display: true, text: "Traffic Count", color: c.tick } },
+      },
+    },
+  });
 }
 
 const modulePages = {
@@ -1928,6 +2026,7 @@ function renderModulePage(view) {
   content.innerHTML = `<div class="module-page fade-in">${render()}</div>`;
   const title = document.querySelector(".topbar-title");
   if (title) title.innerHTML = `${document.querySelector(`[data-view="${view}"] span`)?.textContent || "Module"} <span>02 Jun 2026</span>`;
+  if (view.startsWith("report-")) initReportCharts(view.replace("report-", ""));
 }
 
 function initModuleNavigation() {
