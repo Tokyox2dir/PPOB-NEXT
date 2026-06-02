@@ -372,11 +372,16 @@ const monitorRows = [
   ["SYS-260602-8832", "ESA", "SMB", "OVO25", "08123450010", "17:13:30", "0.9", "Rp25.110", "Rp160", "OK", "Success"],
 ];
 
-const monitorTraffic = [
-  ["BK PAY", "1,820", "1,540", "+18%", 82],
-  ["Telin", "1,322", "1,491", "-11%", 64],
-  ["SMB", "1,110", "980", "+13%", 58],
-  ["Quantum", "902", "860", "+5%", 46],
+const initialMonitorTraffic = [
+  { client: "BK PAY", today: 1820, yesterday: 1540, lastTick: 0 },
+  { client: "Telin", today: 1322, yesterday: 1491, lastTick: 0 },
+  { client: "SMB", today: 1110, yesterday: 980, lastTick: 0 },
+  { client: "Quantum", today: 902, yesterday: 860, lastTick: 0 },
+  { client: "Toplink", today: 760, yesterday: 710, lastTick: 0 },
+  { client: "Redigame", today: 690, yesterday: 640, lastTick: 0 },
+  { client: "HIGO", today: 410, yesterday: 455, lastTick: 0 },
+  { client: "Mitras", today: 385, yesterday: 360, lastTick: 0 },
+  { client: "ESA", today: 240, yesterday: 315, lastTick: 0 },
 ];
 
 const monitorBalance = [
@@ -449,6 +454,19 @@ function FilterCombo({ label, placeholder, options, value, onChange }) {
 function CurrentTransactionPage() {
   const [filters, setFilters] = useState({ account: "", gateway: "", provider: "", status: "", clientId: "", supplierId: "", product: "" });
   const [activeAlert, setActiveAlert] = useState("stop");
+  const [trafficRows, setTrafficRows] = useState(initialMonitorTraffic);
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTrafficRows((current) => {
+        const activeIndex = Math.floor(Math.random() * current.length);
+        return current.map((row, index) => {
+          const tick = index === activeIndex ? Math.floor(Math.random() * 34) + 4 : Math.random() > 0.74 ? Math.floor(Math.random() * 9) + 1 : 0;
+          return { ...row, today: row.today + tick, lastTick: tick };
+        });
+      });
+    }, 2200);
+    return () => clearInterval(timer);
+  }, []);
   const pendingCount = monitorRows.filter((row) => row[10] === "Pending").length;
   const rows = monitorRows.filter((row) => {
     if (filters.account && row[1] !== filters.account) return false;
@@ -579,15 +597,26 @@ function CurrentTransactionPage() {
               <table className="traffic-table">
                 <thead><tr><th>Client</th><th>Today</th><th>Yesterday</th><th>Delta</th><th>Bar</th></tr></thead>
                 <tbody>
-                  {monitorTraffic.map((row) => (
-                    <tr key={row[0]}>
-                      <td><span className="traffic-client"><span className={`live-dot ${String(row[3]).startsWith("+") ? "hot" : "drop"}`} />{row[0]}</span></td>
-                      <td>{row[1]}</td>
-                      <td>{row[2]}</td>
-                      <td><span className={`delta ${String(row[3]).startsWith("+") ? "up" : "down"}`}>{row[3]}</span></td>
-                      <td><div className="mini-bar"><span className="mini-bar-fill" style={{ width: `${row[4]}%`, background: String(row[3]).startsWith("+") ? "var(--success)" : "var(--danger)" }} /></div></td>
+                  {trafficRows.map((row) => {
+                    const delta = row.today - row.yesterday;
+                    const dir = delta > 0 ? "up" : delta < 0 ? "down" : "flat";
+                    const barWidth = Math.min(100, Math.max(10, Math.round((row.today / 1900) * 100)));
+                    return (
+                    <tr key={row.client} className={row.lastTick ? "traffic-pulse" : ""}>
+                      <td>
+                        <span className="traffic-client">
+                          <span className={`live-dot ${row.lastTick ? "hot" : dir === "down" ? "drop" : "hot"}`} />
+                          {row.client}
+                          {row.lastTick > 0 && <span className="traffic-tick hot">+{row.lastTick.toLocaleString("id-ID")}</span>}
+                        </span>
+                      </td>
+                      <td>{row.today.toLocaleString("id-ID")}</td>
+                      <td>{row.yesterday.toLocaleString("id-ID")}</td>
+                      <td><span className={`delta ${dir}`}>{delta > 0 ? "+" : ""}{delta.toLocaleString("id-ID")}</span></td>
+                      <td><div className="mini-bar"><span className="mini-bar-fill" style={{ width: `${barWidth}%`, background: dir === "down" ? "var(--danger)" : "var(--success)" }} /></div></td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
