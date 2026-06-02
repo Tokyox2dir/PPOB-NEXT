@@ -109,6 +109,32 @@ body.modal-open { overflow: hidden; }
 .nav-item:hover { background: var(--bg3); color: var(--text); }
 .nav-item.active { background: rgba(79,140,255,0.12); color: var(--accent); }
 .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+.nav-item-plain {
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 50px;
+  padding: 13px 16px;
+  background: transparent;
+  color: var(--text2);
+  font-size: 13px;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+.nav-item-plain.active {
+  background: transparent;
+  color: var(--text);
+}
+.nav-item-plain span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nav-item-plain .nav-chevron {
+  width: 17px;
+  height: 17px;
+  color: currentColor;
+  opacity: 0.9;
+}
 .sidebar-bottom { padding: 16px 12px; border-top: 1px solid var(--border); }
 
 /* Topbar */
