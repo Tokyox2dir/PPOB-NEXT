@@ -402,6 +402,10 @@ const initialMonitorAlerts = {
     ["Bukalapak", "S50", "No new traffic 32 minutes", "17:16"],
     ["Tokopedia", "DANAKH", "Traffic dropped to 0", "17:18"],
     ["ShopeePay", "PLN", "No request after normal pattern", "17:19"],
+    ["Dana", "TSEL50", "Traffic stopped on prepaid route", "17:21"],
+    ["Blibli", "I10", "No callback traffic after inquiry spike", "17:22"],
+    ["Traveloka", "iPLN", "No payment request after inquiry traffic", "17:23"],
+    ["Fastpay", "S25", "Monitoring detected idle route", "17:24"],
   ],
   product: [
     ["critical", "iPLN / VSI", "Supplier callback: product close", "17:08"],
@@ -409,12 +413,16 @@ const initialMonitorAlerts = {
     ["critical", "S50 / Kisel ApiHub", "Supplier maintenance callback", "17:15"],
     ["warn", "I10 / Indotel", "RC 91 crossed route threshold", "17:17"],
     ["warn", "PLN / VSI", "RC 96 repeated on inquiry", "17:20"],
+    ["critical", "DANA50 / SMB", "Callback product unavailable", "17:22"],
+    ["warn", "OVO25 / Bima Sakti", "RC 91 crossed route threshold", "17:24"],
   ],
   rugi: [
     ["SYS-260602-8834", "HIGO", "GMS50", "Rp300", "17:14"],
     ["SYS-260602-8828", "BK PAY", "DANAKH", "Rp1.200", "17:16"],
     ["SYS-260602-8819", "Bukalapak", "S50", "Rp350", "17:18"],
     ["SYS-260602-8808", "Dana", "I10", "Rp275", "17:20"],
+    ["SYS-260602-8798", "Traveloka", "iPLN", "Rp650", "17:22"],
+    ["SYS-260602-8786", "Fastpay", "S25", "Rp425", "17:24"],
   ],
 };
 
