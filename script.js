@@ -1731,8 +1731,36 @@ function moduleHero(pageNumber, title, subtitle, actions = "") {
   return `<div class="module-hero"><div><div class="module-kicker">Screenshot ${pageNumber}</div><div class="module-title">${escapeHtml(title)}</div><div class="module-subtitle">${escapeHtml(subtitle)}</div></div><div class="module-actions">${actions}</div></div>`;
 }
 
+const moduleDropdownOptions = {
+  account: ["bkpay", "Telin", "Hotelmurah", "Bukalapak", "Dana", "Tokopedia", "quantum", "Teratai", "TOPLINK INDONESIA"],
+  gateway: ["SMB", "VSI", "Bima Sakti", "Indotel", "Kisel ApiHub", "Mobile Pulsa", "Teratai", "MetroReload"],
+  provider: ["PDAM", "Telco", "PLN", "E-Wallet", "BPJS", "Games", "Bank"],
+  category: ["Air", "Pulsa", "Data", "PLN", "E-Wallet", "Games", "Postpaid"],
+  serviceCode: ["S100", "S50", "DANAKH", "iPLN", "I10", "PLN", "BIFASTOPEN", "KABKUPANG", "ATF100"],
+};
+
+function getModuleDropdownOptions(label) {
+  const key = label.toLowerCase().replace(/[^a-z]/g, "");
+  if (key === "account") return moduleDropdownOptions.account;
+  if (key === "gateway" || key === "gatewaysupplier") return moduleDropdownOptions.gateway;
+  if (key === "provider") return moduleDropdownOptions.provider;
+  if (key === "category" || key === "catagory") return moduleDropdownOptions.category;
+  if (key === "servicecode") return moduleDropdownOptions.serviceCode;
+  return null;
+}
+
+function moduleField(field) {
+  const [label, value = "", type = "text", placeholder = ""] = field;
+  const options = getModuleDropdownOptions(label);
+  const control = options
+    ? `<select><option value="">All ${escapeHtml(label)}</option>${options.map((option) => `<option value="${escapeHtml(option)}" ${option === value ? "selected" : ""}>${escapeHtml(option)}</option>`).join("")}</select>`
+    : `<input type="${escapeHtml(type)}" value="${escapeHtml(value)}" placeholder="${escapeHtml(placeholder)}">`;
+
+  return `<div class="module-field"><label>${escapeHtml(label)}</label>${control}</div>`;
+}
+
 function moduleFilters(fields, button = "OK") {
-  return `<div class="module-filter">${fields.map((field) => `<div class="module-field"><label>${escapeHtml(field[0])}</label><input type="${field[2] || "text"}" value="${escapeHtml(field[1] || "")}" placeholder="${escapeHtml(field[3] || "")}"></div>`).join("")}<div class="module-filter-actions"><button class="btn btn-primary">${escapeHtml(button)}</button><button class="btn btn-ghost">Reset</button></div></div>`;
+  return `<div class="module-filter">${fields.map(moduleField).join("")}<div class="module-filter-actions"><button class="btn btn-primary">${escapeHtml(button)}</button><button class="btn btn-ghost">Reset</button></div></div>`;
 }
 
 function moduleMetrics(items) {
