@@ -302,7 +302,29 @@ function SimpleChart({ type, labels, datasets, height = 320 }) {
   );
 }
 
-function DashboardChart({ type, labels, datasets, options = {} }) {
+const donutCenterTextPlugin = {
+  id: "donutCenterText",
+  afterDraw(chart) {
+    if (chart.config.type !== "doughnut") return;
+    const { ctx, chartArea } = chart;
+    if (!chartArea) return;
+    const centerX = (chartArea.left + chartArea.right) / 2;
+    const centerY = (chartArea.top + chartArea.bottom) / 2;
+
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--text").trim() || "#e8ecf4";
+    ctx.font = "800 24px 'DM Sans', sans-serif";
+    ctx.fillText("88.7%", centerX, centerY - 6);
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--text2").trim() || "#8b92a8";
+    ctx.font = "800 10px 'DM Sans', sans-serif";
+    ctx.fillText("Success Rate", centerX, centerY + 16);
+    ctx.restore();
+  },
+};
+
+function DashboardChart({ type, labels, datasets, options = {}, className = "" }) {
   const canvasRef = useRef(null);
   const chartRef = useRef(null);
 
@@ -325,12 +347,13 @@ function DashboardChart({ type, labels, datasets, options = {} }) {
         },
         ...options,
       },
+      plugins: type === "doughnut" ? [donutCenterTextPlugin] : [],
     });
     return () => chartRef.current?.destroy();
   }, [datasets, labels, options, type]);
 
   return (
-    <div className="chart-wrap">
+    <div className={`chart-wrap ${className}`.trim()}>
       <canvas ref={canvasRef} />
     </div>
   );
@@ -393,9 +416,10 @@ function CurrentTransactionPage() {
                   type="line"
                   labels={["05:00", "06:00", "07:00", "08:00", "09:00", "10:00", "11:00", "11:19"]}
                   datasets={[
-                    { label: "Today", data: [420, 510, 780, 690, 980, 1200, 1100, 1350], borderColor: "#4f8cff", backgroundColor: "rgba(79,140,255,.12)", tension: 0.35 },
-                    { label: "Yesterday", data: [380, 450, 600, 880, 740, 990, 1050, 970], borderColor: "#22c55e", backgroundColor: "rgba(34,197,94,.1)", tension: 0.35 },
+                    { label: "Today", data: [420, 510, 780, 690, 980, 1200, 1100, 1350], borderColor: "#4f8cff", backgroundColor: "rgba(79,140,255,.08)", borderWidth: 2, tension: 0.4, fill: true, pointRadius: 2, pointHoverRadius: 5 },
+                    { label: "Yesterday", data: [380, 450, 600, 880, 740, 990, 1050, 970], borderColor: "#555e78", borderDash: [4, 3], borderWidth: 1.5, tension: 0.4, fill: false, pointRadius: 2, pointHoverRadius: 4 },
                   ]}
+                  options={{ interaction: { mode: "index", intersect: false } }}
                 />
               </div>
             </div>
@@ -405,14 +429,13 @@ function CurrentTransactionPage() {
                 <div className="card-title">Status Breakdown</div>
               </div>
               <div className="chart-body donut-body">
-                <div className="donut-wrap">
-                  <DashboardChart
-                    type="doughnut"
-                    labels={["Success", "Reversed", "Pending", "Rejected"]}
-                    datasets={[{ data: [6755, 858, pendingCount, 3], backgroundColor: ["#22c55e", "#f97316", "#f59e0b", "#ef4444"], borderWidth: 0 }]}
-                    options={{ cutout: "68%" }}
-                  />
-                </div>
+                <DashboardChart
+                  type="doughnut"
+                  className="donut-wrap"
+                  labels={["Success", "Reversed", "Pending", "Failed"]}
+                  datasets={[{ data: [6755, 858, pendingCount, 3], backgroundColor: ["#22c55e", "#f97316", "#f59e0b", "#ef4444"], borderWidth: 0 }]}
+                  options={{ cutout: "72%", layout: { padding: 6 }, plugins: { legend: { display: false }, tooltip: { backgroundColor: "#13161e" } } }}
+                />
               </div>
             </div>
           </div>

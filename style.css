@@ -1381,6 +1381,12 @@ select.filter-input { cursor: pointer; }
   width: 200px;
   height: 200px;
   max-width: 200px;
+  max-height: 200px;
+}
+
+.donut-wrap canvas {
+  width: 200px !important;
+  height: 200px !important;
 }
 
 /* Tables */
