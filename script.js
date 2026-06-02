@@ -1745,7 +1745,7 @@ function renderModulePage(view) {
   const content = document.querySelector(".content");
   if (!content) return;
 
-  if (view === "operation-overview") {
+  if (view === "current-transaction") {
     content.innerHTML = dashboardContentHtml;
     const title = document.querySelector(".topbar-title");
     if (title && dashboardTopbarTitleHtml) title.innerHTML = dashboardTopbarTitleHtml;
@@ -1775,7 +1775,7 @@ function initModuleNavigation() {
     link.addEventListener("click", (event) => {
       event.preventDefault();
       const view = link.dataset.view;
-      document.querySelectorAll(".nav-overview, .nav-subitem").forEach((item) => item.classList.remove("active"));
+      document.querySelectorAll(".nav-subitem").forEach((item) => item.classList.remove("active"));
       link.classList.add("active");
       renderModulePage(view);
     });
