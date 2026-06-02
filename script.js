@@ -1838,6 +1838,15 @@ function initReportCharts(type) {
 
   const c = getChartColors();
   const success = config.traffic.map((total, index) => Math.max(0, total - config.reversed[index] - config.pending[index]));
+  const tooltip = {
+    backgroundColor: "#111827",
+    titleColor: "#f8fafc",
+    bodyColor: "#e5e7eb",
+    borderColor: "rgba(148,163,184,0.35)",
+    borderWidth: 1,
+    padding: 10,
+    displayColors: true,
+  };
 
   reportRevenueChart = new Chart(revenueCanvas.getContext("2d"), {
     type: "line",
@@ -1880,7 +1889,7 @@ function initReportCharts(type) {
       interaction: { mode: "index", intersect: false },
       plugins: {
         legend: { labels: { color: c.tick, font: { weight: 800 } } },
-        tooltip: { backgroundColor: c.tooltip },
+        tooltip,
       },
       scales: {
         x: { grid: { color: c.grid }, ticks: { color: c.tick } },
@@ -1895,9 +1904,9 @@ function initReportCharts(type) {
     data: {
       labels: config.labels,
       datasets: [
-        { label: "Success", data: success, backgroundColor: "#22c55e", borderRadius: 5 },
-        { label: "Reversed", data: config.reversed, backgroundColor: "#f97316", borderRadius: 5 },
-        { label: "Pending", data: config.pending, backgroundColor: "#f59e0b", borderRadius: 5 },
+        { label: "Success", data: success, backgroundColor: "rgba(34,197,94,0.82)", borderRadius: 6, maxBarThickness: 48, categoryPercentage: 0.58, barPercentage: 0.72 },
+        { label: "Reversed", data: config.reversed, backgroundColor: "rgba(249,115,22,0.88)", borderRadius: 6, maxBarThickness: 48, categoryPercentage: 0.58, barPercentage: 0.72 },
+        { label: "Pending", data: config.pending, backgroundColor: "rgba(245,158,11,0.9)", borderRadius: 6, maxBarThickness: 48, categoryPercentage: 0.58, barPercentage: 0.72 },
       ],
     },
     options: {
@@ -1905,7 +1914,7 @@ function initReportCharts(type) {
       maintainAspectRatio: false,
       plugins: {
         legend: { labels: { color: c.tick, font: { weight: 800 } } },
-        tooltip: { backgroundColor: c.tooltip },
+        tooltip,
       },
       scales: {
         x: { stacked: true, grid: { color: c.grid }, ticks: { color: c.tick } },
