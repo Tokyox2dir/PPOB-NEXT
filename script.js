@@ -614,6 +614,7 @@ function refreshDashboard() {
   updateHourlyChartFromFilters();
   updateSummaryStats();
   renderPagination();
+  syncPendingFilterCardState();
 }
 
 function applyDashboardFilters() {
@@ -627,6 +628,14 @@ function resetDashboardFilters() {
   currentPage = 1;
   syncFilterInputs();
   refreshDashboard();
+}
+
+function showPendingTransactions() {
+  filterState = { ...DEFAULT_FILTERS, status: "Pending" };
+  currentPage = 1;
+  syncFilterInputs();
+  refreshDashboard();
+  document.querySelector(".trx-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 // Render traffic
@@ -740,6 +749,13 @@ function updatePendingVisualState(pendingCount = LIVE_PENDING.size) {
   if (!pendingCard) return;
 
   pendingCard.classList.toggle("is-live-pending", pendingCount > 0);
+}
+
+function syncPendingFilterCardState() {
+  const pendingCard = document.querySelector(".stat-card.pending");
+  if (!pendingCard) return;
+
+  pendingCard.classList.toggle("pending-filter-active", filterState.status === "Pending");
 }
 
 function countRowsByStatus(status, rows = getDashboardRows()) {
