@@ -4,6 +4,8 @@ import {
   BarController,
   BarElement,
   CategoryScale,
+  ArcElement,
+  DoughnutController,
   LinearScale,
   LineController,
   LineElement,
@@ -14,7 +16,7 @@ import {
 import { ChevronDown, Menu, Moon, Sun } from "lucide-react";
 import { filterOptions, menuSections, moduleTables, reportSeries, routeToView, transactions, viewMeta } from "./data.js";
 
-ChartJS.register(BarController, BarElement, CategoryScale, LinearScale, LineController, LineElement, PointElement, Tooltip, Legend);
+ChartJS.register(ArcElement, BarController, BarElement, CategoryScale, DoughnutController, LinearScale, LineController, LineElement, PointElement, Tooltip, Legend);
 
 const defaultRoute = "/transactions/current";
 
@@ -300,67 +302,204 @@ function SimpleChart({ type, labels, datasets, height = 320 }) {
   );
 }
 
-function CurrentTransactionPage() {
-  const [statusFilter, setStatusFilter] = useState("");
-  const rows = statusFilter ? transactions.filter((row) => row[3] === statusFilter) : transactions;
-  const pendingCount = transactions.filter((row) => row[3] === "Pending").length;
-  const trafficLabels = ["17:05", "17:06", "17:07", "17:08", "17:09", "17:10", "17:11", "17:12", "17:13", "17:14", "17:15", "17:16", "17:17", "17:18"];
-  const traffic = [780, 920, 860, 1280, 1110, 1450, 1390, 1620, 1810, 1715, 1905, 1760, 1920, 1956];
-  const successRate = [93.1, 94.6, 92.8, 95.2, 94.1, 96.3, 95.5, 94.9, 95.8, 93.7, 96.1, 94.8, 95.6, 94.81];
+function DashboardChart({ type, labels, datasets, options = {} }) {
+  const canvasRef = useRef(null);
+  const chartRef = useRef(null);
+
+  useEffect(() => {
+    if (!canvasRef.current) return undefined;
+    chartRef.current?.destroy();
+    chartRef.current = new ChartJS(canvasRef.current, {
+      type,
+      data: { labels, datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: "#8b92a8", boxWidth: 12, font: { size: 11, weight: "700" } } },
+          tooltip: { backgroundColor: "#13161e", borderColor: "#252a38", borderWidth: 1 },
+        },
+        scales: type === "doughnut" ? undefined : {
+          x: { ticks: { color: "#8b92a8" }, grid: { color: "rgba(139,146,168,.13)" } },
+          y: { ticks: { color: "#8b92a8" }, grid: { color: "rgba(139,146,168,.13)" } },
+        },
+        ...options,
+      },
+    });
+    return () => chartRef.current?.destroy();
+  }, [datasets, labels, options, type]);
 
   return (
-    <div className="content dashboard-content monitoring-page">
-      <section className="monitor-hero">
-        <div>
-          <span className="eyebrow">Monitoring Dashboard</span>
-          <h1>Current Transaction</h1>
-          <p>Ringkasan transaksi live, status gateway, pending drill-down, dan traffic per menit.</p>
-        </div>
-        <div className="monitor-date">
-          <span>02 Jun 2026</span>
-          <strong>17:18 WIB</strong>
-        </div>
-      </section>
-      <div className="metrics-grid">
-        <StatCard label="Success Rate" value="94.81%" tone="success" />
-        <StatCard label="Pending" value={pendingCount} tone="warning" onClick={() => setStatusFilter("Pending")} />
-        <StatCard label="Rejected" value="3" tone="danger" />
-        <StatCard label="Traffic / Min" value="1,956" />
-      </div>
-      <div className="health-grid">
-        <HealthCard label="Success" value="39,768" caption="Hari ini" tone="success" />
-        <HealthCard label="Reversed" value="2,236" caption="5.32%" tone="warning" />
-        <HealthCard label="Revenue" value="Rp5.69B" caption="Daily gross" />
-        <HealthCard label="Margin" value="Rp9.96M" caption="0.18%" tone="success" />
-      </div>
-      <FilterPanel fields={["account", "gateway", "serviceCode", "status"]} onStatus={setStatusFilter} />
-      {statusFilter && (
-        <div className="status-banner">
-          Menampilkan transaksi <strong>{statusFilter}</strong> saja.
-          <button type="button" onClick={() => setStatusFilter("")}>Reset</button>
-        </div>
-      )}
-      <div className="monitor-grid">
-        <SimpleChart
-          type="line"
-          labels={trafficLabels}
-          datasets={[
-            { label: "Traffic", data: traffic, borderColor: "#2f80ed", backgroundColor: "rgba(47,128,237,.12)", tension: 0.35 },
-            { label: "Success Rate", data: successRate, borderColor: "#00c853", backgroundColor: "rgba(0,200,83,.1)", tension: 0.35 },
-          ]}
-          height={380}
-        />
-        <div className="monitor-side">
-          <SimpleChart
-            type="bar"
-            labels={["Pending", "Success", "Rejected", "Reversed"]}
-            datasets={[{ label: "Status", data: [pendingCount, 42, 3, 5], backgroundColor: ["#fbbf24", "#22c55e", "#ef4444", "#8b5e4f"] }]}
-            height={210}
-          />
-          <GatewayHealthList />
+    <div className="chart-wrap">
+      <canvas ref={canvasRef} />
+    </div>
+  );
+}
+
+function CurrentTransactionPage() {
+  const [statusFilter, setStatusFilter] = useState("");
+  const trxRows = [
+    ["SYS-260602-8841", "BK PAY", "SMB", "S100", "08123450001", "17:18:03", "0.8", "Rp96.300", "Rp420", "OK", "Success"],
+    ["SYS-260602-8840", "Telin", "Indotel", "S1000", "08123450002", "17:17:41", "1.2", "Rp990.410", "Rp1.120", "Waiting supplier callback", "Pending"],
+    ["SYS-260602-8839", "SMB", "Telin", "DANAKH", "08123450003", "17:17:09", "0.5", "-", "-", "service code invalid", "Rejected"],
+    ["SYS-260602-8838", "Quantum", "Toplink", "GPYKH", "08123450004", "17:16:22", "0.7", "Rp12.450", "Rp210", "OK", "Success"],
+    ["SYS-260602-8837", "Toplink", "PlusLink", "S100", "08123450005", "17:15:55", "1.6", "Rp98.525", "Rp350", "Callback delayed", "Pending"],
+    ["SYS-260602-8836", "Redigame", "Bima Sakti", "ATF100", "08123450006", "17:15:02", "0.9", "Rp75.000", "Rp260", "OK", "Success"],
+    ["SYS-260602-8835", "BK PAY", "SMB", "PLN20", "08123450007", "17:14:44", "0.6", "Rp20.350", "Rp180", "OK", "Success"],
+    ["SYS-260602-8834", "HIGO", "Aviana", "GMS50", "08123450008", "17:14:10", "1.1", "Rp50.750", "Rp300", "Reversed by gateway", "Reversed"],
+    ["SYS-260602-8833", "Mitras", "Toplink", "DANA50", "08123450009", "17:13:52", "0.8", "Rp50.120", "Rp240", "OK", "Success"],
+    ["SYS-260602-8832", "ESA", "SMB", "OVO25", "08123450010", "17:13:30", "0.9", "Rp25.110", "Rp160", "OK", "Success"],
+  ];
+  const rows = statusFilter ? trxRows.filter((row) => row[10] === statusFilter) : trxRows;
+  const pendingCount = trxRows.filter((row) => row[10] === "Pending").length;
+
+  return (
+    <div className="content">
+      <div className="filter-bar fade-in fixed-elem">
+        <div className="filter-group"><div className="filter-label">Start Date</div><input className="filter-input date-input" type="datetime-local" defaultValue="2026-05-15T00:00" /></div>
+        <div className="filter-group"><div className="filter-label">End Date</div><input className="filter-input date-input" type="datetime-local" defaultValue="2026-05-15T23:59" /></div>
+        <div className="filter-group"><div className="filter-label">Account</div><select className="filter-input"><option>All Accounts</option><option>BK PAY</option><option>Telin</option><option>SMB</option></select></div>
+        <div className="filter-group"><div className="filter-label">Client ID</div><input className="filter-input search-input" type="search" placeholder="Search client ID" /></div>
+        <div className="filter-group"><div className="filter-label">Gateway</div><select className="filter-input"><option>All Gateways</option><option>SMB</option><option>Toplink</option><option>Indotel</option></select></div>
+        <div className="filter-group"><div className="filter-label">Supplier ID</div><input className="filter-input search-input" type="search" placeholder="Search supplier ID" /></div>
+        <div className="filter-group"><div className="filter-label">Provider</div><select className="filter-input"><option>All Providers</option><option>PDAM</option><option>TELCO</option><option>Games</option></select></div>
+        <div className="filter-group"><div className="filter-label">Product/Service</div><input className="filter-input search-input" type="search" placeholder="Search product" /></div>
+        <div className="filter-group"><div className="filter-label">Status</div><select className="filter-input" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="">All Statuses</option><option>Success</option><option>Pending</option><option>Rejected</option><option>Reversed</option></select></div>
+        <div className="filter-actions">
+          <button className="btn btn-primary" type="button">Search</button>
+          <button className="btn btn-ghost" type="button" onClick={() => setStatusFilter("")}>Reset</button>
         </div>
       </div>
-      <DataTable columns={["Time Stamp", "Account", "RefId", "Status", "Code", "Destination", "Value"]} rows={rows} />
+
+      <div className="stats-row fixed-elem">
+        <div className="stat-card total fade-in"><div className="stat-label">Total Transactions</div><div className="stat-value total">7,615</div><div className="stat-pct">Today</div></div>
+        <div className="stat-card success fade-in"><div className="stat-label">Success</div><div className="stat-value success">6,755</div><div className="stat-pct">88.7%</div></div>
+        <button className="stat-card pending fade-in stat-card-button" type="button" onClick={() => setStatusFilter("Pending")}><div className="stat-label">Pending</div><div className="stat-value pending">{pendingCount}</div><div className="stat-pct">0.03%</div></button>
+        <div className="stat-card reversed fade-in"><div className="stat-label">Reversed</div><div className="stat-value reversed">858</div><div className="stat-pct">11.3%</div></div>
+        <div className="stat-card revenue fade-in"><div className="stat-label">Revenue</div><div className="stat-value revenue">Rp5.69B</div><div className="stat-pct">Today</div></div>
+        <div className="stat-card margin fade-in"><div className="stat-label">Margin</div><div className="stat-value margin">Rp9.96M</div><div className="stat-pct">Today</div></div>
+      </div>
+
+      <div className="dashboard-main-grid">
+        <div className="grid-left">
+          <div className="top-charts-row fixed-elem">
+            <div className="card chart-card-hourly fade-in">
+              <div className="card-header">
+                <div className="card-title">Volume Per Hour</div>
+                <div className="chart-time-range">05:00 - 11:19</div>
+              </div>
+              <div className="chart-body">
+                <DashboardChart
+                  type="line"
+                  labels={["05:00", "06:00", "07:00", "08:00", "09:00", "10:00", "11:00", "11:19"]}
+                  datasets={[
+                    { label: "Today", data: [420, 510, 780, 690, 980, 1200, 1100, 1350], borderColor: "#4f8cff", backgroundColor: "rgba(79,140,255,.12)", tension: 0.35 },
+                    { label: "Yesterday", data: [380, 450, 600, 880, 740, 990, 1050, 970], borderColor: "#22c55e", backgroundColor: "rgba(34,197,94,.1)", tension: 0.35 },
+                  ]}
+                />
+              </div>
+            </div>
+
+            <div className="card chart-card-donut fade-in">
+              <div className="card-header">
+                <div className="card-title">Status Breakdown</div>
+              </div>
+              <div className="chart-body donut-body">
+                <div className="donut-wrap">
+                  <DashboardChart
+                    type="doughnut"
+                    labels={["Success", "Reversed", "Pending", "Rejected"]}
+                    datasets={[{ data: [6755, 858, pendingCount, 3], backgroundColor: ["#22c55e", "#f97316", "#f59e0b", "#ef4444"], borderWidth: 0 }]}
+                    options={{ cutout: "68%" }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="card fade-in flex-fill trx-card">
+            <div className="card-header fixed-elem">
+              <div className="card-title">Transaction List</div>
+              <span>{rows.length.toLocaleString("id-ID")} rows - Page <b>1</b></span>
+            </div>
+            <div className="table-wrap scrollable flex-fill trx-scroll">
+              <table className="trx-table">
+                <thead><tr><th>#</th><th>Sys TRX ID</th><th>Client</th><th>Supplier</th><th>Product</th><th>Destination</th><th>Request Time</th><th>Time (s)</th><th>Price</th><th>Margin</th><th>Reason</th><th>Status</th></tr></thead>
+                <tbody>
+                  {rows.map((row, index) => (
+                    <tr key={row[0]} className={row[10] === "Pending" ? "trx-row-pending" : ""}>
+                      <td>{index + 1}</td>
+                      {row.map((cell, cellIndex) => <td key={`${row[0]}-${cellIndex}`}>{cellIndex === 10 ? <span className={`status-badge ${cell.toLowerCase()}`}>{cell}</span> : cell}</td>)}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="pagination fixed-elem">
+              <div className="page-info">Showing <b>1-{rows.length}</b> of <b>{rows.length}</b> transactions</div>
+              <div className="page-btns"><button className="page-btn active" type="button">1</button><button className="page-btn" type="button">2</button><button className="page-btn" type="button">3</button></div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid-right">
+          <div className="card fade-in fixed-elem">
+            <div className="card-header"><div className="card-title">Traffic Per Client</div><span className="card-kicker">vs same time yesterday</span></div>
+            <div className="table-wrap traffic-scroll">
+              <table className="traffic-table">
+                <thead><tr><th>Client</th><th>Today</th><th>Yesterday</th><th>Delta</th><th>Bar</th></tr></thead>
+                <tbody>
+                  {[
+                    ["BK PAY", "1,820", "1,540", "+18%", 82],
+                    ["Telin", "1,322", "1,491", "-11%", 64],
+                    ["SMB", "1,110", "980", "+13%", 58],
+                    ["Quantum", "902", "860", "+5%", 46],
+                  ].map((row) => (
+                    <tr key={row[0]}><td>{row[0]}</td><td>{row[1]}</td><td>{row[2]}</td><td className={String(row[3]).startsWith("+") ? "text-success" : "text-danger"}>{row[3]}</td><td><div className="traffic-bar"><span style={{ width: `${row[4]}%` }} /></div></td></tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="card fade-in fixed-elem balance-card">
+            <div className="card-header"><div className="card-title">Balance Monitor</div><span className="alert-count-badge warn">2 low</span></div>
+            <div className="table-wrap balance-scroll">
+              <table className="alert-table balance-table">
+                <thead><tr><th>Level</th><th>Account</th><th>Type</th><th>Balance</th><th>Threshold</th></tr></thead>
+                <tbody>
+                  <tr><td><span className="severity warn">WARN</span></td><td>Toplink</td><td>Gateway</td><td>80.4M</td><td>100M</td></tr>
+                  <tr><td><span className="severity critical">CRIT</span></td><td>Telin</td><td>Gateway</td><td>96.3M</td><td>150M</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="card fade-in flex-fill alert-monitor-card">
+            <div className="card-header fixed-elem alert-header">
+              <div className="alert-header-top">
+                <div className="card-title">Alert Monitor</div>
+                <div style={{ display: "flex", gap: 5 }}><span className="alert-count-badge danger">2 critical</span><span className="alert-count-badge warn">3 warn</span></div>
+              </div>
+              <div className="alert-tabs">
+                <button className="alert-tab active" type="button">Client Info <span className="tab-badge" style={{ background: "var(--danger-bg)", color: "var(--danger)" }}>2</span></button>
+                <button className="alert-tab" type="button">Incidents <span className="tab-badge" style={{ background: "var(--warn-bg)", color: "var(--warn)" }}>2</span></button>
+                <button className="alert-tab" type="button">Loss Trx <span className="tab-badge" style={{ background: "var(--pending-bg)", color: "var(--pending)" }}>1</span></button>
+              </div>
+            </div>
+            <div className="alert-panel active scrollable flex-fill alert-scroll">
+              <table className="alert-table">
+                <thead><tr><th>Client</th><th>Product</th><th>Detail</th><th>Since</th></tr></thead>
+                <tbody>
+                  <tr><td>Telin</td><td>S100</td><td>Stop transaksi mendadak</td><td>17:02</td></tr>
+                  <tr><td>BK PAY</td><td>DANAOPEN</td><td>Callback terlambat</td><td>17:11</td></tr>
+                  <tr><td>SMB</td><td>PLN20</td><td>Spike reversal</td><td>17:14</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
