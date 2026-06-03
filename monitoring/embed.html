@@ -6,6 +6,14 @@
   <title>TRX Monitor - Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,300&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css?v=24">
+  <script>
+    (function () {
+      var theme = new URLSearchParams(window.location.search).get("theme");
+      if (theme === "light" || theme === "dark") {
+        document.documentElement.setAttribute("data-theme", theme);
+      }
+    })();
+  </script>
   <style>
     .sidebar,
     .topbar {

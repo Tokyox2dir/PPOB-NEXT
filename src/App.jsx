@@ -798,8 +798,8 @@ function ChangePasswordPage() {
   );
 }
 
-function ModulePage({ view }) {
-  if (view === "current-transaction") return <LegacyMonitoringPage />;
+function ModulePage({ view, theme }) {
+  if (view === "current-transaction") return <LegacyMonitoringPage theme={theme} />;
   if (view === "admin-change-password") return <ChangePasswordPage />;
   const module = moduleTables[view];
   if (!module) return <ReportPage mode="hourly" />;
@@ -816,11 +816,11 @@ function ModulePage({ view }) {
   );
 }
 
-function LegacyMonitoringPage() {
+function LegacyMonitoringPage({ theme }) {
   return (
     <iframe
       className="legacy-monitor-frame"
-      src="./monitoring/embed.html?v=react-sidebar"
+      src={`./monitoring/embed.html?v=theme-sync&theme=${theme}`}
       title="Current Transaction Monitoring"
     />
   );
@@ -882,8 +882,8 @@ export default function App() {
 
   const page = useMemo(() => {
     if (activeView.startsWith("report-")) return <ReportPage mode={activeView.replace("report-", "")} />;
-    return <ModulePage view={activeView} />;
-  }, [activeView]);
+    return <ModulePage view={activeView} theme={theme} />;
+  }, [activeView, theme]);
 
   return (
     <div className={`layout ${sidebarHidden ? "sidebar-hidden" : ""}`}>
