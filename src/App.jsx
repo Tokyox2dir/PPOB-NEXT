@@ -820,7 +820,7 @@ function LegacyMonitoringPage() {
   return (
     <iframe
       className="legacy-monitor-frame"
-      src="./monitoring/index.html?v=pending-click"
+      src="./monitoring/embed.html?v=react-sidebar"
       title="Current Transaction Monitoring"
     />
   );
@@ -884,10 +884,6 @@ export default function App() {
     if (activeView.startsWith("report-")) return <ReportPage mode={activeView.replace("report-", "")} />;
     return <ModulePage view={activeView} />;
   }, [activeView]);
-
-  if (activeView === "current-transaction") {
-    return <LegacyMonitoringPage />;
-  }
 
   return (
     <div className={`layout ${sidebarHidden ? "sidebar-hidden" : ""}`}>
