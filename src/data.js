@@ -22,6 +22,12 @@ import {
 
 export const menuSections = [
   {
+    label: "Business",
+    items: [
+      { id: "business-overview", label: "Business Overview", path: "/business/overview", icon: Gauge },
+    ],
+  },
+  {
     label: "Transaction",
     items: [
       { id: "current-transaction", label: "Current Transaction", path: "/transactions/current", icon: Grid2X2 },

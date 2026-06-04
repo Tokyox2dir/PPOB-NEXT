@@ -798,8 +798,21 @@ function ChangePasswordPage() {
   );
 }
 
+function BusinessOverviewPage() {
+  return (
+    <div className="content module-page">
+      <Hero screenshot="Draft" title="Business Overview" subtitle="Area ini disiapkan untuk desain business overview berikutnya." />
+      <div className="empty-state">
+        <div className="empty-state-title">Business overview draft area</div>
+        <div className="empty-state-copy">Layout dan isi final bisa masuk di sini nanti tanpa mengganggu dashboard monitoring.</div>
+      </div>
+    </div>
+  );
+}
+
 function ModulePage({ view, theme }) {
   if (view === "current-transaction") return <LegacyMonitoringPage theme={theme} />;
+  if (view === "business-overview") return <BusinessOverviewPage />;
   if (view === "admin-change-password") return <ChangePasswordPage />;
   const module = moduleTables[view];
   if (!module) return <ReportPage mode="hourly" />;
