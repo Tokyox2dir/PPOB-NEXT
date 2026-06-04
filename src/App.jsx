@@ -13,7 +13,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import { ChevronDown, Menu, Moon, Sun } from "lucide-react";
+import { Bell, ChevronDown, Menu, Moon, Sun, Volume2, VolumeX, X } from "lucide-react";
 import { filterOptions, menuSections, moduleTables, reportSeries, routeToView, transactions, viewMeta } from "./data.js";
 
 ChartJS.register(ArcElement, BarController, BarElement, CategoryScale, DoughnutController, LinearScale, LineController, LineElement, PointElement, Tooltip, Legend);
@@ -56,6 +56,79 @@ function useClock() {
     return () => clearInterval(timer);
   }, []);
   return clock;
+}
+
+const nocApprovalEvents = [
+  { trxId: "SYS-260604-1182", client: "BK PAY", product: "DANAKH", amount: "Rp120.000", approver: "Risk Ops" },
+  { trxId: "SYS-260604-1183", client: "Telin", product: "S100", amount: "Rp96.300", approver: "Settlement" },
+  { trxId: "SYS-260604-1184", client: "SMB", product: "PLN20", amount: "Rp20.350", approver: "Admin" },
+  { trxId: "SYS-260604-1185", client: "Quantum", product: "GPYKH", amount: "Rp12.450", approver: "Finance" },
+];
+
+function playApprovalTone(audioContextRef) {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) return;
+  const context = audioContextRef.current || new AudioContextClass();
+  audioContextRef.current = context;
+  if (context.state === "suspended") context.resume();
+
+  [0, 0.16].forEach((offset, index) => {
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = "sine";
+    oscillator.frequency.value = index === 0 ? 880 : 1174;
+    gain.gain.setValueAtTime(0.0001, context.currentTime + offset);
+    gain.gain.exponentialRampToValueAtTime(0.18, context.currentTime + offset + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + offset + 0.15);
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start(context.currentTime + offset);
+    oscillator.stop(context.currentTime + offset + 0.18);
+  });
+}
+
+function useNocApprovalNotifications(active) {
+  const [toasts, setToasts] = useState([]);
+  const [soundEnabled, setSoundEnabled] = useState(false);
+  const audioContextRef = useRef(null);
+  const eventIndexRef = useRef(0);
+
+  const pushApproval = (event) => {
+    const id = `${event.trxId}-${Date.now()}`;
+    setToasts((current) => [{ ...event, id, time: new Date() }, ...current].slice(0, 4));
+    window.setTimeout(() => {
+      setToasts((current) => current.filter((toast) => toast.id !== id));
+    }, 8500);
+  };
+
+  const enableSound = () => {
+    playApprovalTone(audioContextRef);
+    setSoundEnabled(true);
+  };
+
+  useEffect(() => {
+    if (!active) return undefined;
+    const emit = () => {
+      const event = nocApprovalEvents[eventIndexRef.current % nocApprovalEvents.length];
+      eventIndexRef.current += 1;
+      pushApproval(event);
+      if (soundEnabled) playApprovalTone(audioContextRef);
+    };
+
+    const first = window.setTimeout(emit, 4500);
+    const timer = window.setInterval(emit, 18000);
+    return () => {
+      window.clearTimeout(first);
+      window.clearInterval(timer);
+    };
+  }, [active, soundEnabled]);
+
+  return {
+    toasts,
+    soundEnabled,
+    enableSound,
+    dismissToast: (id) => setToasts((current) => current.filter((toast) => toast.id !== id)),
+  };
 }
 
 function Sidebar({ activeView, onNavigate, collapsed }) {
@@ -110,7 +183,7 @@ function Sidebar({ activeView, onNavigate, collapsed }) {
   );
 }
 
-function Topbar({ title, onToggleSidebar, onToggleTheme, theme }) {
+function Topbar({ title, onToggleSidebar, onToggleTheme, theme, onEnableSound, soundEnabled }) {
   const clock = useClock();
   return (
     <div className="topbar fixed-elem">
@@ -125,12 +198,37 @@ function Topbar({ title, onToggleSidebar, onToggleTheme, theme }) {
           <span className="live-dot" />
           <span>{clock}</span>
         </div>
+        <button className={`sound-toggle btn ${soundEnabled ? "btn-sound-on" : "btn-ghost"}`} type="button" onClick={onEnableSound} title="Enable NOC approval sound">
+          {soundEnabled ? <Volume2 /> : <VolumeX />}
+          <span>{soundEnabled ? "Sound On" : "Enable Sound"}</span>
+        </button>
         <button className="theme-toggle-top btn btn-ghost" type="button" onClick={onToggleTheme} title="Toggle theme">
           {theme === "dark" ? <Sun /> : <Moon />}
           <span>{theme === "dark" ? "Light" : "Dark"}</span>
         </button>
         <div className="user-chip">Dito (Super Admin)</div>
       </div>
+    </div>
+  );
+}
+
+function NocApprovalToasts({ toasts, onDismiss }) {
+  return (
+    <div className="noc-toast-stack" aria-live="polite" aria-label="NOC approval notifications">
+      {toasts.map((toast) => (
+        <div className="noc-toast" key={toast.id}>
+          <div className="noc-toast-icon"><Bell /></div>
+          <div className="noc-toast-body">
+            <div className="noc-toast-kicker">Approved transaction</div>
+            <div className="noc-toast-title">{toast.trxId}</div>
+            <div className="noc-toast-detail">{toast.client} / {toast.product} approved by {toast.approver}</div>
+            <div className="noc-toast-meta">{toast.amount} · {toast.time.toLocaleTimeString("id-ID", { hour12: false })}</div>
+          </div>
+          <button className="noc-toast-close" type="button" onClick={() => onDismiss(toast.id)} aria-label="Dismiss notification">
+            <X />
+          </button>
+        </div>
+      ))}
     </div>
   );
 }
@@ -874,6 +972,7 @@ export default function App() {
   const [sidebarHidden, setSidebarHidden] = useState(false);
   const activeView = routeToView[route] || "current-transaction";
   const meta = viewMeta[activeView] || viewMeta["current-transaction"];
+  const nocNotifications = useNocApprovalNotifications(activeView === "current-transaction");
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -889,9 +988,10 @@ export default function App() {
     <div className={`layout ${sidebarHidden ? "sidebar-hidden" : ""}`}>
       <Sidebar activeView={activeView} onNavigate={navigate} collapsed={sidebarHidden} />
       <main className="main">
-        <Topbar title={activeView === "current-transaction" ? "Transaction / List" : meta.label} onToggleSidebar={() => setSidebarHidden((value) => !value)} onToggleTheme={() => setTheme((value) => (value === "dark" ? "light" : "dark"))} theme={theme} />
+        <Topbar title={activeView === "current-transaction" ? "Transaction / List" : meta.label} onToggleSidebar={() => setSidebarHidden((value) => !value)} onToggleTheme={() => setTheme((value) => (value === "dark" ? "light" : "dark"))} theme={theme} onEnableSound={nocNotifications.enableSound} soundEnabled={nocNotifications.soundEnabled} />
         {page}
       </main>
+      <NocApprovalToasts toasts={nocNotifications.toasts} onDismiss={nocNotifications.dismissToast} />
     </div>
   );
 }
