@@ -2630,10 +2630,45 @@ tbody tr:hover td { background: var(--bg3); }
   box-shadow: 0 0 0 3px rgba(79, 140, 255, .14);
 }
 
-.top-traffic-table td:nth-child(3),
-.top-traffic-table td:nth-child(4) {
+.top-traffic-table {
+  min-width: 820px;
+}
+
+.top-traffic-table th:nth-child(1),
+.top-traffic-table td:nth-child(1) {
+  width: 64px;
+  text-align: center;
+}
+
+.top-traffic-table th:nth-child(2),
+.top-traffic-table td:nth-child(2),
+.top-traffic-table th:nth-child(3),
+.top-traffic-table td:nth-child(3) {
+  width: calc((100% - 64px) / 2);
+}
+
+.traffic-entity {
+  display: grid;
+  grid-template-columns: minmax(140px, .9fr) minmax(150px, 1fr);
+  align-items: center;
+  gap: 4px 16px;
+  min-height: 54px;
+}
+
+.traffic-entity strong {
+  grid-row: span 2;
   color: var(--text);
-  font-family: var(--mono);
+  font-size: 18px;
+}
+
+.traffic-entity span {
+  color: var(--text2);
+  font: 900 12px/1.3 var(--mono);
+  white-space: nowrap;
+}
+
+.traffic-entity.supplier {
+  grid-template-columns: minmax(150px, .8fr) minmax(170px, 1fr);
 }
 
 .client-analytics-table {

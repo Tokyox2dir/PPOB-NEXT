@@ -818,16 +818,16 @@ const lossMarginRows = [
 ];
 
 const topTrafficRows = [
-  ["Bkpay", "53.000", "Rp250.000.000.000", "SMB"],
-  ["Telin", "42.800", "Rp117.000.000.000", "Indotel"],
-  ["SMB", "39.600", "Rp95.500.000.000", "Telin"],
-  ["Quantum", "31.200", "Rp88.750.000.000", "Toplink"],
-  ["Toplink", "28.900", "Rp80.400.000.000", "PlusLink"],
-  ["Dana", "22.150", "Rp64.250.000.000", "SMB"],
-  ["ShopeePay", "18.620", "Rp45.477.600", "Bima Sakti"],
-  ["Bukalapak", "16.800", "Rp27.866.774", "Servermitra"],
-  ["HIGO", "12.980", "Rp58.538.561", "Aviana"],
-  ["Redigame", "10.740", "Rp35.900.000", "Bima Sakti"],
+  { client: "Bkpay", clientTraffic: "53.000", clientRevenue: "Rp250.000.000.000", supplier: "SMB", supplierTraffic: "53.000", supplierRevenue: "Rp250.000.000.000" },
+  { client: "Telin", clientTraffic: "42.800", clientRevenue: "Rp117.000.000.000", supplier: "Indotel", supplierTraffic: "39.250", supplierRevenue: "Rp106.850.000.000" },
+  { client: "SMB", clientTraffic: "39.600", clientRevenue: "Rp95.500.000.000", supplier: "Telin", supplierTraffic: "37.900", supplierRevenue: "Rp91.200.000.000" },
+  { client: "Quantum", clientTraffic: "31.200", clientRevenue: "Rp88.750.000.000", supplier: "Toplink", supplierTraffic: "30.840", supplierRevenue: "Rp80.400.000.000" },
+  { client: "Toplink", clientTraffic: "28.900", clientRevenue: "Rp80.400.000.000", supplier: "PlusLink", supplierTraffic: "27.600", supplierRevenue: "Rp78.100.000.000" },
+  { client: "Dana", clientTraffic: "22.150", clientRevenue: "Rp64.250.000.000", supplier: "SMB", supplierTraffic: "21.980", supplierRevenue: "Rp63.700.000.000" },
+  { client: "ShopeePay", clientTraffic: "18.620", clientRevenue: "Rp45.477.600", supplier: "Bima Sakti", supplierTraffic: "18.200", supplierRevenue: "Rp44.900.000" },
+  { client: "Bukalapak", clientTraffic: "16.800", clientRevenue: "Rp27.866.774", supplier: "Servermitra", supplierTraffic: "16.240", supplierRevenue: "Rp27.334.525" },
+  { client: "HIGO", clientTraffic: "12.980", clientRevenue: "Rp58.538.561", supplier: "Aviana", supplierTraffic: "12.430", supplierRevenue: "Rp55.909.185" },
+  { client: "Redigame", clientTraffic: "10.740", clientRevenue: "Rp35.900.000", supplier: "Bima Sakti", supplierTraffic: "10.410", supplierRevenue: "Rp33.600.000" },
 ];
 
 const clientAnalyticsRows = [
@@ -935,15 +935,25 @@ function BusinessOverviewPage() {
         </div>
         <div className="business-table-wrap">
           <table className="business-table top-traffic-table">
-            <thead><tr><th>#</th><th>Client</th><th>Traffic</th><th>Revenue</th><th>Supplier</th></tr></thead>
+            <thead><tr><th>#</th><th>Client</th><th>Supplier</th></tr></thead>
             <tbody>
-              {topTrafficRows.map(([client, traffic, revenue, supplier], index) => (
-                <tr key={client}>
+              {topTrafficRows.map((row, index) => (
+                <tr key={`${row.client}-${row.supplier}`}>
                   <td>{index + 1}</td>
-                  <td><strong>{client}</strong></td>
-                  <td>{traffic}</td>
-                  <td>{revenue}</td>
-                  <td>{supplier}</td>
+                  <td>
+                    <div className="traffic-entity">
+                      <strong>{row.client}</strong>
+                      <span>Traffic : {row.clientTraffic}</span>
+                      <span>Revenue : {row.clientRevenue}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="traffic-entity supplier">
+                      <strong>{row.supplier}</strong>
+                      <span>Traffic : {row.supplierTraffic}</span>
+                      <span>Revenue : {row.supplierRevenue}</span>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
