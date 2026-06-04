@@ -903,30 +903,59 @@ function BusinessOverviewPage() {
         </aside>
       </div>
 
-      <section className="business-panel">
-        <div className="business-section-heading">
-          <strong>History Loss Margin</strong>
-          <small>Total : {lossMarginRows.length} trx</small>
-        </div>
-        <div className="business-table-wrap">
-          <table className="business-table">
-            <thead><tr><th>Date</th><th>Client</th><th>Service Code</th><th>Loss</th><th>Reason</th></tr></thead>
-            <tbody>
-              {lossMarginRows.map((row) => (
-                <tr key={row.join("-")} className="loss-row">
-                  <td>{row[0]}</td>
-                  <td>{row[1]}</td>
-                  <td>{row[2]}</td>
-                  <td>{row[3]}</td>
-                  <td>
-                    <input className="business-reason-input" defaultValue={row[4]} aria-label={`Reason for ${row[1]} ${row[2]}`} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <div className="business-loss-grid">
+        <section className="business-panel">
+          <div className="business-section-heading">
+            <strong>History Loss Margin</strong>
+            <small>Total : {lossMarginRows.length} trx</small>
+          </div>
+          <div className="business-table-wrap">
+            <table className="business-table loss-margin-table">
+              <thead><tr><th>Date</th><th>Client</th><th>Service Code</th><th>Loss</th><th>Reason</th></tr></thead>
+              <tbody>
+                {lossMarginRows.map((row) => (
+                  <tr key={row.join("-")} className="loss-row">
+                    <td>{row[0]}</td>
+                    <td>{row[1]}</td>
+                    <td>{row[2]}</td>
+                    <td>{row[3]}</td>
+                    <td>
+                      <input className="business-reason-input" defaultValue={row[4]} aria-label={`Reason for ${row[1]} ${row[2]}`} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="business-panel business-status-panel">
+          <div className="business-section-heading">
+            <strong>Status Breakdown</strong>
+            <small>Success rate</small>
+          </div>
+          <div className="business-donut-wrap">
+            <DashboardChart
+              type="doughnut"
+              labels={["Success", "Reversed", "Pending", "Rejected"]}
+              datasets={[{
+                data: [88.7, 11.3, 0.03, 0.8],
+                backgroundColor: ["#22c55e", "#f97316", "#f59e0b", "#ef4444"],
+                borderColor: "rgba(255,255,255,.9)",
+                borderWidth: 2,
+                cutout: "70%",
+              }]}
+              options={{
+                plugins: {
+                  legend: { display: false },
+                  tooltip: { backgroundColor: "#13161e", borderColor: "#252a38", borderWidth: 1 },
+                },
+              }}
+              className="business-donut-chart"
+            />
+          </div>
+        </section>
+      </div>
 
       <section className="business-panel">
         <div className="business-section-heading">

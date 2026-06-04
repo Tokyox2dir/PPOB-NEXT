@@ -2569,6 +2569,13 @@ tbody tr:hover td { background: var(--bg3); }
   color: var(--success);
 }
 
+.business-loss-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  gap: 18px;
+  align-items: stretch;
+}
+
 .business-table-wrap {
   overflow: auto;
 }
@@ -2599,6 +2606,28 @@ tbody tr:hover td { background: var(--bg3); }
 
 .business-table td strong {
   color: var(--text);
+}
+
+.loss-margin-table {
+  min-width: 760px;
+}
+
+.business-status-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.business-donut-wrap {
+  display: grid;
+  place-items: center;
+  flex: 1;
+  min-height: 250px;
+  padding: 22px;
+}
+
+.business-donut-chart {
+  width: min(245px, 100%);
+  height: 245px;
 }
 
 .loss-row td:nth-child(4) {
@@ -2727,7 +2756,8 @@ tbody tr:hover td { background: var(--bg3); }
 
 @media (max-width: 1200px) {
   .business-filter-card,
-  .business-hero-grid {
+  .business-hero-grid,
+  .business-loss-grid {
     grid-template-columns: 1fr;
   }
 
