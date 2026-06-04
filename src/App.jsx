@@ -913,7 +913,15 @@ function BusinessOverviewPage() {
             <thead><tr><th>Date</th><th>Client</th><th>Service Code</th><th>Loss</th><th>Reason</th></tr></thead>
             <tbody>
               {lossMarginRows.map((row) => (
-                <tr key={row.join("-")} className="loss-row">{row.map((cell) => <td key={cell}>{cell}</td>)}</tr>
+                <tr key={row.join("-")} className="loss-row">
+                  <td>{row[0]}</td>
+                  <td>{row[1]}</td>
+                  <td>{row[2]}</td>
+                  <td>{row[3]}</td>
+                  <td>
+                    <input className="business-reason-input" defaultValue={row[4]} aria-label={`Reason for ${row[1]} ${row[2]}`} />
+                  </td>
+                </tr>
               ))}
             </tbody>
           </table>
