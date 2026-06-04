@@ -798,14 +798,181 @@ function ChangePasswordPage() {
   );
 }
 
-function BusinessOverviewPage() {
+const businessTrend = [
+  { label: "08:00", traffic: 13200, revenue: 155000000, cost: 148200000, margin: 6800000 },
+  { label: "09:00", traffic: 18450, revenue: 216000000, cost: 207400000, margin: 8600000 },
+  { label: "10:00", traffic: 15100, revenue: 189000000, cost: 181500000, margin: 7500000 },
+  { label: "11:00", traffic: 23600, revenue: 292000000, cost: 279800000, margin: 12200000 },
+  { label: "12:00", traffic: 8900, revenue: 117000000, cost: 112300000, margin: 4700000 },
+  { label: "13:00", traffic: 21950, revenue: 268000000, cost: 256200000, margin: 11800000 },
+  { label: "14:00", traffic: 17600, revenue: 241000000, cost: 231900000, margin: 9100000 },
+  { label: "15:00", traffic: 19800, revenue: 287000000, cost: 274500000, margin: 12500000 },
+];
+
+const lossMarginRows = [
+  ["04-06-2026", "Toplink", "S10", "-Rp30.000", "Loss Monitoring"],
+  ["01-06-2026", "Bukalapak", "DANA100", "-Rp10.000", "Forgot to update price"],
+  ["29-05-2026", "HIGO", "GMS50", "-Rp7.500", "Reversed by gateway"],
+  ["27-05-2026", "Telin", "S1000", "-Rp5.250", "Callback delayed"],
+  ["25-05-2026", "BK PAY", "PLN20", "-Rp4.700", "Price mismatch"],
+];
+
+const topTrafficRows = [
+  ["Bkpay", "53.000", "Rp250.000.000.000", "SMB"],
+  ["Telin", "42.800", "Rp117.000.000.000", "Indotel"],
+  ["SMB", "39.600", "Rp95.500.000.000", "Telin"],
+  ["Quantum", "31.200", "Rp88.750.000.000", "Toplink"],
+  ["Toplink", "28.900", "Rp80.400.000.000", "PlusLink"],
+  ["Dana", "22.150", "Rp64.250.000.000", "SMB"],
+  ["ShopeePay", "18.620", "Rp45.477.600", "Bima Sakti"],
+  ["Bukalapak", "16.800", "Rp27.866.774", "Servermitra"],
+  ["HIGO", "12.980", "Rp58.538.561", "Aviana"],
+  ["Redigame", "10.740", "Rp35.900.000", "Bima Sakti"],
+];
+
+const clientAnalyticsRows = [
+  { group: "growth" },
+  { client: "Cashcepat", serviceCode: "S100", product: "OTP Indosat", today: 12400, dayBefore: 10900, sevenBefore: 9800, status: "High Growth" },
+  { client: "RupiahCepat", serviceCode: "DANAKH", product: "Reminder Telkomsel", today: 9250, dayBefore: 8700, sevenBefore: 8110, status: "Medium Growth" },
+  { client: "SINGA.ID", serviceCode: "GPYKH", product: "Login OTP XL", today: 6840, dayBefore: 6620, sevenBefore: 6700, status: "Low Growth" },
+  { group: "drop" },
+  { client: "GOT_OTP", serviceCode: "S1000", product: "Bukalapak Indosat", today: 8700, dayBefore: 9950, sevenBefore: 10600, status: "High Drop" },
+  { client: "OMNI_WAGEN", serviceCode: "ATF100", product: "BRI-NOTIF Telkomsel", today: 5880, dayBefore: 6020, sevenBefore: 5940, status: "Low Drop" },
+  { client: "SF_A2P_2", serviceCode: "PLN20", product: "UangMe XL", today: 7420, dayBefore: 8010, sevenBefore: 7880, status: "Medium Drop" },
+];
+
+function DeltaBadge({ current, previous }) {
+  const delta = current - previous;
+  const percent = previous ? (delta / previous) * 100 : 0;
+  const positive = delta >= 0;
+
   return (
-    <div className="content module-page">
-      <Hero screenshot="Draft" title="Business Overview" subtitle="Area ini disiapkan untuk desain business overview berikutnya." />
-      <div className="empty-state">
-        <div className="empty-state-title">Business overview draft area</div>
-        <div className="empty-state-copy">Layout dan isi final bisa masuk di sini nanti tanpa mengganggu dashboard monitoring.</div>
+    <span className={`biz-delta ${positive ? "positive" : "negative"}`}>
+      {positive ? "+" : ""}{delta.toLocaleString("id-ID")} ({positive ? "+" : ""}{percent.toFixed(1)}%)
+    </span>
+  );
+}
+
+function BusinessOverviewPage() {
+  const totals = useMemo(() => {
+    const revenue = businessTrend.reduce((sum, item) => sum + item.revenue, 0);
+    const cost = businessTrend.reduce((sum, item) => sum + item.cost, 0);
+    const margin = businessTrend.reduce((sum, item) => sum + item.margin, 0);
+    const traffic = businessTrend.reduce((sum, item) => sum + item.traffic, 0);
+    return { revenue, cost, margin, traffic };
+  }, []);
+
+  return (
+    <div className="content module-page business-page">
+      <Hero screenshot="Draft" title="Business Overview" subtitle="Revenue, cost, margin, traffic, loss history, top traffic, dan client analytics." />
+
+      <div className="business-filter-card">
+        <label><span>Date</span><input type="date" defaultValue="2026-06-04" /></label>
+        <label><span>Client</span><select defaultValue=""><option value="">All Client</option>{filterOptions.account.map((item) => <option key={item}>{item}</option>)}</select></label>
+        <label><span>Service Code</span><select defaultValue=""><option value="">All Service Code</option>{filterOptions.serviceCode.map((item) => <option key={item}>{item}</option>)}</select></label>
+        <label><span>Product</span><select defaultValue=""><option value="">All Product</option>{filterOptions.category.map((item) => <option key={item}>{item}</option>)}</select></label>
+        <button className="btn btn-primary" type="button">Submit</button>
       </div>
+
+      <div className="business-hero-grid">
+        <section className="business-chart-card">
+          <div className="business-section-heading">
+            <div>
+              <span>Margin Cost Revenue Traffic</span>
+              <strong>Daily Business Movement</strong>
+            </div>
+            <small>Live dummy from dashboard traffic</small>
+          </div>
+          <SimpleChart
+            type="bar"
+            labels={businessTrend.map((item) => item.label)}
+            datasets={[
+              { label: "Traffic / 100", data: businessTrend.map((item) => Math.round(item.traffic / 100)), backgroundColor: "rgba(79, 140, 255, .28)", borderColor: "#4f8cff", borderWidth: 1 },
+              { type: "line", label: "Revenue (M)", data: businessTrend.map((item) => item.revenue / 1000000), borderColor: "#22c55e", backgroundColor: "rgba(34,197,94,.12)", borderWidth: 3, tension: 0.35 },
+              { type: "line", label: "Cost (M)", data: businessTrend.map((item) => item.cost / 1000000), borderColor: "#f97316", backgroundColor: "rgba(249,115,22,.12)", borderWidth: 3, tension: 0.35 },
+              { type: "line", label: "Margin (M)", data: businessTrend.map((item) => item.margin / 1000000), borderColor: "#8b5cf6", backgroundColor: "rgba(139,92,246,.12)", borderWidth: 3, tension: 0.35 },
+            ]}
+            height={360}
+          />
+        </section>
+
+        <aside className="business-kpi-stack">
+          <div className="business-kpi-card revenue"><span>Revenue</span><strong>{money(totals.revenue)}</strong><small>{totals.traffic.toLocaleString("id-ID")} traffic</small></div>
+          <div className="business-kpi-card cost"><span>Cost</span><strong>{money(totals.cost)}</strong><small>{((totals.cost / totals.revenue) * 100).toFixed(1)}% of revenue</small></div>
+          <div className="business-kpi-card margin"><span>Margin</span><strong>{money(totals.margin)}</strong><small>{((totals.margin / totals.revenue) * 100).toFixed(2)}% net</small></div>
+        </aside>
+      </div>
+
+      <section className="business-panel">
+        <div className="business-section-heading">
+          <strong>History Loss Margin</strong>
+          <small>Total : {lossMarginRows.length} trx</small>
+        </div>
+        <div className="business-table-wrap">
+          <table className="business-table">
+            <thead><tr><th>Date</th><th>Client</th><th>Service Code</th><th>Loss</th><th>Reason</th></tr></thead>
+            <tbody>
+              {lossMarginRows.map((row) => (
+                <tr key={row.join("-")} className="loss-row">{row.map((cell) => <td key={cell}>{cell}</td>)}</tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="business-panel">
+        <div className="business-section-heading">
+          <strong>Top 10 Traffic</strong>
+          <small>Client and supplier traffic ranking</small>
+        </div>
+        <div className="business-table-wrap">
+          <table className="business-table top-traffic-table">
+            <thead><tr><th>#</th><th>Client</th><th>Traffic</th><th>Revenue</th><th>Supplier</th></tr></thead>
+            <tbody>
+              {topTrafficRows.map(([client, traffic, revenue, supplier], index) => (
+                <tr key={client}>
+                  <td>{index + 1}</td>
+                  <td><strong>{client}</strong></td>
+                  <td>{traffic}</td>
+                  <td>{revenue}</td>
+                  <td>{supplier}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="business-panel client-analytics-panel">
+        <div className="business-section-heading">
+          <strong>Client Analytics</strong>
+          <small>Today vs 1 day before and 7 day before</small>
+        </div>
+        <div className="business-table-wrap">
+          <table className="business-table client-analytics-table">
+            <thead><tr><th>Client</th><th>Service Code</th><th>Product</th><th>Today</th><th>1 Day Before</th><th>7 Day Before</th><th>Status</th></tr></thead>
+            <tbody>
+              {clientAnalyticsRows.map((row) => {
+                if (row.group) {
+                  return <tr key={row.group} className={`analytics-group ${row.group}`}><td colSpan="7">{row.group}</td></tr>;
+                }
+
+                return (
+                  <tr key={row.client} className={row.today >= row.dayBefore ? "analytics-growth" : "analytics-drop"}>
+                    <td><strong>{row.client}</strong></td>
+                    <td>{row.serviceCode}</td>
+                    <td>{row.product}</td>
+                    <td>{row.today.toLocaleString("id-ID")}</td>
+                    <td>{row.dayBefore.toLocaleString("id-ID")} <DeltaBadge current={row.today} previous={row.dayBefore} /></td>
+                    <td>{row.sevenBefore.toLocaleString("id-ID")} <DeltaBadge current={row.today} previous={row.sevenBefore} /></td>
+                    <td><span className={`analytics-status ${row.today >= row.dayBefore ? "growth" : "drop"}`}>{row.status}</span></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
   );
 }
