@@ -2412,7 +2412,7 @@ tbody tr:hover td { background: var(--bg3); }
 
 .business-filter-card {
   display: grid;
-  grid-template-columns: 160px minmax(140px, 1fr) minmax(160px, 1fr) minmax(140px, 1fr) auto;
+  grid-template-columns: 160px minmax(240px, 1.2fr) minmax(140px, 1fr) minmax(160px, 1fr) minmax(140px, 1fr) auto;
   align-items: end;
   gap: 12px;
   padding: 16px;
@@ -2427,12 +2427,50 @@ tbody tr:hover td { background: var(--bg3); }
   min-width: 0;
 }
 
+.business-period-control {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
 .business-filter-card span,
 .business-section-heading span {
   color: var(--text2);
   font: 800 10px/1 var(--mono);
   letter-spacing: 1px;
   text-transform: uppercase;
+}
+
+.business-period-segment {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  min-height: 38px;
+  padding: 4px;
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  background: var(--bg3);
+}
+
+.business-period-segment button {
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text2);
+  cursor: pointer;
+  font: 900 11px/1 var(--mono);
+  text-transform: uppercase;
+}
+
+.business-period-segment button:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, .04);
+}
+
+.business-period-segment button.active {
+  color: #fff;
+  background: var(--accent);
+  box-shadow: 0 8px 22px rgba(79, 140, 255, .28);
 }
 
 .business-filter-card input,

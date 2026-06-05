@@ -798,16 +798,35 @@ function ChangePasswordPage() {
   );
 }
 
-const businessTrend = [
-  { label: "08:00", traffic: 13200, revenue: 155000000, cost: 148200000, margin: 6800000 },
-  { label: "09:00", traffic: 18450, revenue: 216000000, cost: 207400000, margin: 8600000 },
-  { label: "10:00", traffic: 15100, revenue: 189000000, cost: 181500000, margin: 7500000 },
-  { label: "11:00", traffic: 23600, revenue: 292000000, cost: 279800000, margin: 12200000 },
-  { label: "12:00", traffic: 8900, revenue: 117000000, cost: 112300000, margin: 4700000 },
-  { label: "13:00", traffic: 21950, revenue: 268000000, cost: 256200000, margin: 11800000 },
-  { label: "14:00", traffic: 17600, revenue: 241000000, cost: 231900000, margin: 9100000 },
-  { label: "15:00", traffic: 19800, revenue: 287000000, cost: 274500000, margin: 12500000 },
-];
+const businessTrendByPeriod = {
+  daily: [
+    { label: "08:00", traffic: 1320000, revenue: 155000000, cost: 148200000, margin: 6800000 },
+    { label: "09:00", traffic: 1845000, revenue: 216000000, cost: 207400000, margin: 8600000 },
+    { label: "10:00", traffic: 1510000, revenue: 189000000, cost: 181500000, margin: 7500000 },
+    { label: "11:00", traffic: 2360000, revenue: 292000000, cost: 279800000, margin: 12200000 },
+    { label: "12:00", traffic: 890000, revenue: 117000000, cost: 112300000, margin: 4700000 },
+    { label: "13:00", traffic: 2195000, revenue: 268000000, cost: 256200000, margin: 11800000 },
+    { label: "14:00", traffic: 1760000, revenue: 241000000, cost: 231900000, margin: 9100000 },
+    { label: "15:00", traffic: 1980000, revenue: 287000000, cost: 274500000, margin: 12500000 },
+  ],
+  weekly: [
+    { label: "Mon", traffic: 12580000, revenue: 1540000000, cost: 1481000000, margin: 59000000 },
+    { label: "Tue", traffic: 14260000, revenue: 1720000000, cost: 1658000000, margin: 62000000 },
+    { label: "Wed", traffic: 11890000, revenue: 1490000000, cost: 1436000000, margin: 54000000 },
+    { label: "Thu", traffic: 16150000, revenue: 1980000000, cost: 1901000000, margin: 79000000 },
+    { label: "Fri", traffic: 17840000, revenue: 2260000000, cost: 2169000000, margin: 91000000 },
+    { label: "Sat", traffic: 15220000, revenue: 1890000000, cost: 1817000000, margin: 73000000 },
+    { label: "Sun", traffic: 13650000, revenue: 1640000000, cost: 1576000000, margin: 64000000 },
+  ],
+  monthly: [
+    { label: "Jan", traffic: 64196000, revenue: 3935164663, cost: 3924508697, margin: 10655966 },
+    { label: "Feb", traffic: 57096000, revenue: 4139342252, cost: 4133611008, margin: 5731244 },
+    { label: "Mar", traffic: 101330000, revenue: 8410002930, cost: 8394266458, margin: 15736472 },
+    { label: "Apr", traffic: 317588000, revenue: 36510952753, cost: 36448821321, margin: 62131432 },
+    { label: "May", traffic: 407501000, revenue: 54458456890, cost: 54356514807, margin: 102032083 },
+    { label: "Jun", traffic: 39768000, revenue: 5690756214, cost: 5680793115, margin: 9963099 },
+  ],
+};
 
 const lossMarginRows = [
   ["04-06-2026", "Toplink", "S10", "-Rp30.000", "Loss Monitoring"],
@@ -854,13 +873,16 @@ function DeltaBadge({ current, previous }) {
 }
 
 function BusinessOverviewPage() {
+  const [period, setPeriod] = useState("daily");
+  const businessTrend = businessTrendByPeriod[period];
   const totals = useMemo(() => {
     const revenue = businessTrend.reduce((sum, item) => sum + item.revenue, 0);
     const cost = businessTrend.reduce((sum, item) => sum + item.cost, 0);
     const margin = businessTrend.reduce((sum, item) => sum + item.margin, 0);
     const traffic = businessTrend.reduce((sum, item) => sum + item.traffic, 0);
     return { revenue, cost, margin, traffic };
-  }, []);
+  }, [businessTrend]);
+  const periodTitle = `${period[0].toUpperCase()}${period.slice(1)} Business Movement`;
 
   return (
     <div className="content module-page business-page">
@@ -868,6 +890,16 @@ function BusinessOverviewPage() {
 
       <div className="business-filter-card">
         <label><span>Date</span><input type="date" defaultValue="2026-06-04" /></label>
+        <div className="business-period-control">
+          <span>Period</span>
+          <div className="business-period-segment" role="group" aria-label="Business chart period">
+            {["daily", "weekly", "monthly"].map((item) => (
+              <button className={period === item ? "active" : ""} type="button" key={item} onClick={() => setPeriod(item)}>
+                {item}
+              </button>
+            ))}
+          </div>
+        </div>
         <label><span>Client</span><select defaultValue=""><option value="">All Client</option>{filterOptions.account.map((item) => <option key={item}>{item}</option>)}</select></label>
         <label><span>Service Code</span><select defaultValue=""><option value="">All Service Code</option>{filterOptions.serviceCode.map((item) => <option key={item}>{item}</option>)}</select></label>
         <label><span>Product</span><select defaultValue=""><option value="">All Product</option>{filterOptions.category.map((item) => <option key={item}>{item}</option>)}</select></label>
@@ -879,15 +911,15 @@ function BusinessOverviewPage() {
           <div className="business-section-heading">
             <div>
               <span>Margin Cost Revenue Traffic</span>
-              <strong>Daily Business Movement</strong>
+              <strong>{periodTitle}</strong>
             </div>
-            <small>Live dummy from dashboard traffic</small>
+            <small>{totals.traffic.toLocaleString("id-ID")} traffic</small>
           </div>
           <SimpleChart
             type="bar"
             labels={businessTrend.map((item) => item.label)}
             datasets={[
-              { label: "Traffic / 100", data: businessTrend.map((item) => Math.round(item.traffic / 100)), backgroundColor: "rgba(79, 140, 255, .28)", borderColor: "#4f8cff", borderWidth: 1 },
+              { label: "Traffic / 10K", data: businessTrend.map((item) => Math.round(item.traffic / 10000)), backgroundColor: "rgba(79, 140, 255, .28)", borderColor: "#4f8cff", borderWidth: 1 },
               { type: "line", label: "Revenue (M)", data: businessTrend.map((item) => item.revenue / 1000000), borderColor: "#22c55e", backgroundColor: "rgba(34,197,94,.12)", borderWidth: 3, tension: 0.35 },
               { type: "line", label: "Cost (M)", data: businessTrend.map((item) => item.cost / 1000000), borderColor: "#f97316", backgroundColor: "rgba(249,115,22,.12)", borderWidth: 3, tension: 0.35 },
               { type: "line", label: "Margin (M)", data: businessTrend.map((item) => item.margin / 1000000), borderColor: "#8b5cf6", backgroundColor: "rgba(139,92,246,.12)", borderWidth: 3, tension: 0.35 },
